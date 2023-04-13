@@ -33,6 +33,8 @@ async function fetchStats() {
       axios.get('/api/get_total_allowed_servers'),
       axios.get('/api/get_total_servers'),
       axios.get('/api/get_total_cpus'),
+      axios.get('/api/get_num_reserved_cpus'),
+      axios.get('/api/get_server_config_item?key=svr_total_per_core'),
       axios.get('/api/get_cpu_usage'),
       axios.get('/api/get_memory_usage'),
       axios.get('/api/get_memory_total'),
@@ -47,6 +49,8 @@ async function fetchStats() {
       { data: serverTotalAllowed},
       { data: serversTotal },
       { data: cpusTotal },
+      { data: cpusReserved },
+      { data: totalPerCore },
       { data: cpuUsed },
       { data: memoryUsed },
       { data: memoryTotal },
@@ -60,6 +64,8 @@ async function fetchStats() {
       serverTotalAllowed,
       serversTotal,
       cpusTotal,
+      cpusReserved,
+      totalPerCore,
       cpuUsed,
       memoryUsed,
       memoryTotal,
@@ -100,20 +106,23 @@ function Home() {
   return (
     <div>
       <h1>Server Statistics</h1>
-      <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
         <Col xs={24} md={8}>
           <Statistic title="Public IP" value={stats.serverIP || 'Loading...'} />
         </Col>
       </Row>
-      <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
         <Col xs={24} md={8}>
-          <Statistic title="Total Servers / Max allowed" value={`${stats.serversTotal || '-'} / ${stats.serverTotalAllowed || '-'}`} />
+          <Statistic title="Servers Configured" value={`${stats.serversTotal || '-'} / ${stats.serverTotalAllowed || '-'}`} suffix={<span style={{ fontSize: '14px' }}>total</span>}/>
         </Col>
         <Col xs={24} md={8}>
-          <Statistic title="Total Logical CPU Cores" value={stats.cpusTotal || '-'} />
+          <Statistic title="Total Logical CPU Cores" value={stats.cpusTotal || '-'} suffix={ <span style={{ fontSize: '14px' }}>cores ({stats.cpusReserved} reserved for OS)</span>}/>
+        </Col>
+        <Col xs={24} md={8}>
+          <Statistic title="Max Servers per Thread" value={stats.totalPerCore}/>
         </Col>
       </Row>
-      <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: '20px' }}>
         <Col xs={24} md={8}>
           <Statistic title="Memory Usage" value=' ' />
           <Progress
@@ -135,7 +144,7 @@ function Home() {
           />
         </Col>
         <Col xs={24} md={8}>
-          <Statistic title="CPU Usage" value=' ' />
+          <Statistic title="CPU Load" value=' ' />
           <Progress
             type="circle"
             percent={typeof stats.cpuUsed === 'number' ? stats.cpuUsed : 0}
@@ -151,7 +160,7 @@ function Home() {
       </Row>
       <br />
       <h1>Match Statistics</h1>
-      <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]} >
         <Col xs={24} md={8}>
           <Statistic title="Matches in Progress" value={stats.numMatchesInGame || '-'} />
         </Col>
@@ -163,7 +172,7 @@ function Home() {
       <h1>Skipped Frames</h1>
       <Row gutter={[16, 16]}>
         <Col xs={24}>
-          {stats.skippedFramesData && <SkippedFramesGraphAll data={stats.skippedFramesData} serverName={Object.keys(stats.skippedFramesData)[0]} />}
+          {stats.skippedFramesData && <SkippedFramesGraphAll data={stats.skippedFramesData} serverNames={Object.keys(stats.skippedFramesData)} />}
         </Col>
       </Row>
     </div>

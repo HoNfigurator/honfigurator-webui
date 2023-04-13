@@ -6,8 +6,8 @@ import './LoginForm.css';
 const { Content } = Layout;
 
 const LoginForm = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('test@test.com');
+  const [password, setPassword] = useState('test');
 
   const handleSubmit = async (event) => {
     event.preventDefault();

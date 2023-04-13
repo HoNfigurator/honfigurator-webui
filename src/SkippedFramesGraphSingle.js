@@ -8,16 +8,18 @@ function SkippedFramesGraph({ port }) {
   const fetchData = async () => {
     try {
       const response = await axios.get(`/api/get_skipped_frame_data?port=${port}`);
-      setData(
-        Object.entries(response.data).map(([timestamp, value]) => ({
+      const sortedData = Object.entries(response.data)
+        .map(([timestamp, value]) => ({
           timestamp: new Date(parseInt(timestamp) * 1000).getTime(),
-          value
+          value,
         }))
-      );
+        .sort((a, b) => a.timestamp - b.timestamp);
+      setData(sortedData);
     } catch (error) {
       console.error('Error fetching skipped frame data:', error);
     }
   };
+  
   
 
   useEffect(() => {
