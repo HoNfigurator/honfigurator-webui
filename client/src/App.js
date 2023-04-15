@@ -4,6 +4,7 @@ import { Layout, Menu, Button } from 'antd';
 import './App.css';
 import Home from './Home';
 import ServerStatus from './ServerStatus';
+import RegisterForm from './Security/RegisterForm'
 import LoginForm from './Security/LoginForm';
 
 const { Header, Content, Sider } = Layout;
@@ -47,6 +48,7 @@ function App() {
               <Route path="/status" element={<ServerStatus nestedObject="Performance (lag)" />} />
               <Route path="/control" element={<ServerStatus />} />
               <Route path="/login" element={<LoginForm />} />
+              <Route path="/register" element={<RegisterForm />} />
             </Routes>
           </Content>
         </Layout>
