@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import axios from 'axios';
 
 function SkippedFramesGraph({ port }) {
   const [data, setData] = useState([]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const response = await axios.get(`/api/get_skipped_frame_data?port=${port}`);
       const sortedData = Object.entries(response.data)
@@ -18,9 +18,7 @@ function SkippedFramesGraph({ port }) {
     } catch (error) {
       console.error('Error fetching skipped frame data:', error);
     }
-  };
-  
-  
+  }, [port]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -28,7 +26,7 @@ function SkippedFramesGraph({ port }) {
     }, 5000);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchData]);
 
 const formatValue = (value) => `${value}ms`;
 

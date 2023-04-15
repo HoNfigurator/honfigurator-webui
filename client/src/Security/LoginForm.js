@@ -1,6 +1,4 @@
-// LoginForm.js
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Layout } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import './LoginForm.css';
@@ -9,37 +7,22 @@ import { authenticate } from './Authentication';
 const { Content } = Layout;
 
 const LoginForm = () => {
-  const [certificateDetails, setCertificateDetails] = useState({ cn: '', thumbprint: '' });
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const navigate = useNavigate();
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData({ ...formData, [name]: value });
+  };
 
   const handleRedirectToRegister = () => {
     navigate('/register');
   };
 
-  useEffect(() => {
-    const getCertificateDetails = async () => {
-      const response = await fetch('/login');
-      const thumbprint = response.headers.get('X-SSL-Client-Thumbprint');
-      const dn = response.headers.get('X-SSL-Client-DN');
-      if (dn) {
-        const dnParts = dn.split(',');
-        const cn = dnParts.find(part => part.startsWith('CN=')).split('=')[1];
-        console.log(cn);
-        console.log(thumbprint);
-        setCertificateDetails({ cn, thumbprint });
-      }
-    };
-    getCertificateDetails();
-  }, []);
-
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!certificateDetails.cn) {
-      handleRedirectToRegister();
-      return;
-    }
     try {
-      const token = await authenticate(certificateDetails.cn, certificateDetails.thumbprint);
+      const token = await authenticate(formData.username, formData.password);
       localStorage.setItem('token', token);
       window.location.href = '/';
     } catch (error) {
@@ -51,21 +34,32 @@ const LoginForm = () => {
     <Layout style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <Content className="login-form-content">
         <form onSubmit={handleSubmit} className="login-form">
-          <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Request Access</h2>
-          {certificateDetails.cn ? (
-            <div>
-              <p style={{ textAlign: 'center' }}>Click "Log In" to authenticate using your client certificate.</p>
-              <p style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Selected Certificate: {certificateDetails.cn}</p>
-              <button type="submit" className="login-form-submit-btn">Log In</button>
-            </div>
-          ) : (
-            <div>
-              <p style={{ textAlign: 'center' }}>You don't have a certificate associated with your account. Please visit the Register page to create a certificate.</p>
-              <button type="button" className="login-form-submit-btn" onClick={handleRedirectToRegister} style={{ display: 'block', margin: '0 auto' }}>
-                Register
-              </button>
-            </div>
-          )}
+          <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Log In</h2>
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Username"
+            className="login-form-input"
+          />
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Password"
+            className="login-form-input"
+          />
+          <button type="submit" className="login-form-submit-btn">Log In</button>
+          <button
+            type="button"
+            className="login-form-submit-btn"
+            onClick={handleRedirectToRegister}
+            style={{ display: 'block', margin: '0 auto', marginTop: '1rem' }}
+          >
+            Register
+          </button>
         </form>
       </Content>
     </Layout>
