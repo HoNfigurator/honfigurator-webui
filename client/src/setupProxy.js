@@ -17,4 +17,12 @@ module.exports = function(app) {
       agent: agent
     })
   );
+
+  app.use(
+    '/api-ui',
+    createProxyMiddleware({
+      target: 'http://localhost:3001',
+      changeOrigin: true
+    })
+  );
 };

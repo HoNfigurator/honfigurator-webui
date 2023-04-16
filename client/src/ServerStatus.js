@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, Row, Col, Collapse, Button } from 'antd';
 import StatusDetail from './StatusDetail';
-import RequireAuth from './Security/RequireAuth';
 
 
 function ServerStates() {
@@ -171,4 +170,4 @@ function ServerStates() {
   );
 }
 
-export default RequireAuth(ServerStates);
+export default ServerStates;

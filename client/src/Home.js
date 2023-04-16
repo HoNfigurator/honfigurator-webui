@@ -3,7 +3,6 @@ import { Button, Statistic, Row, Col, Progress } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SkippedFramesGraphAll from './SkippedFramesGraphAll';
-import RequireAuth from './Security/RequireAuth';
 
 function useWindowDimensions() {
   const [windowDimensions, setWindowDimensions] = useState({
@@ -135,11 +134,11 @@ function Home() {
                 return `${stats.memoryUsed || '-'} / ${stats.memoryTotal || '-'}GB`;
               }
             }}
-            width={120}
             strokeColor={{
               '0%': '#108ee9',
               '100%': '#87d068',
             }}
+            size={120}
             style={{ marginTop: '-30px' }}
           />
         </Col>
@@ -149,11 +148,11 @@ function Home() {
             type="circle"
             percent={typeof stats.cpuUsed === 'number' ? stats.cpuUsed : 0}
             format={(percent) => `${Number(percent).toFixed(2)}%`}
-            width={120}
             strokeColor={{
               '0%': '#108ee9',
               '100%': '#87d068',
             }}
+            size={120}
             style={{ marginTop: '-30px' }}
           />
         </Col>
@@ -180,4 +179,4 @@ function Home() {
   
 }
 
-export default RequireAuth(Home);
+export default Home;
