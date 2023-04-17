@@ -1,103 +1,100 @@
 // server/src/controllers/userController.js
-let users = [];
-
 const axios = require('axios');
-const qs = require('qs');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const DiscordOAuth2 = require('discord-oauth2');
+const oauth = new DiscordOAuth2();
 
 const { createUser, getUserDataFromDatabase, updateAccessToken } = require('../db/session'); // Import the functions
 const { jwtSecret, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI } = require('../config');
+const TokenManager = require('../helpers/tokenManager');
 
-async function discordOAuth2(req, res) {
-    const { code } = req.query;
-    // const { DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI } = process.env;  
+// server/controllers/userController.js
+async function reauthenticateUser(req, res) {
     try {
-        const tokenResponse = await axios.post('https://discord.com/api/oauth2/token', qs.stringify({
-            client_id: DISCORD_CLIENT_ID,
-            client_secret: DISCORD_CLIENT_SECRET,
-            grant_type: 'authorization_code',
-            code,
-            redirect_uri: DISCORD_REDIRECT_URI,
-        }), {
-            headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        const { access_token: accessToken, refresh_token: refreshToken } = tokenResponse.data;
-
-        // Retrieve the user's information using the access token
-        const userResponse = await axios.get('https://discord.com/api/users/@me', {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        });
-
-        // After retrieving the user's data
-        const userData = userResponse.data;
-
-        // Generate a session token (e.g., a JSON Web Token or JWT)
-        const sessionToken = jwt.sign({ user_id: userData.id }, jwtSecret, { expiresIn: '1h' });
-
-        // Save the access token, userData, and sessionToken in your database, and create a session for the user
-        const session = await createUser(userData, accessToken, refreshToken);
-
-        // Redirect the user back to your frontend, sending the session token as a query parameter
-        console.log("REDIRECTING TO HOME PAGE")
-        res.redirect(`http://localhost:3000?sessionToken=${sessionToken}`); // Replace with the appropriate frontend route
-    } catch (error) {
-      console.error('Error during Discord OAuth2:', error);
-      res.status(500).json({ error: 'Internal server error' });
-      console.log(error.response)
-    }
-  }
-
-  async function refreshAccessToken(req, res) {
-    try {
-      const { user_id } = req.user;
-      const userData = await getUserDataFromDatabase({ discord_id: user_id });
-  
-      if (!userData) {
+      const authHeader = req.headers.authorization;
+      console.log(authHeader);
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
   
-      const refreshToken = userData.refresh_token; // Change this line
-      const newAccessToken = await getNewAccessToken(refreshToken);
+      const token = authHeader.split(' ')[1];
+      console.log(token);
+      if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
   
-      // Update the access token in the database
-      await updateAccessToken(user_id, newAccessToken);
+      // Verify and decode the token to get the user_id (discord_id)
+      const decoded = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] });
+      const user_id = decoded.user_id;
   
-      res.json({ access_token: newAccessToken });
+      console.log(user_id);
+      const userData = await getUserDataFromDatabase({ discord_id: user_id });
+  
+      if (!userData) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+  
+      // If access_token is expired, try to refresh it
+      if (Date.now() >= userData.expires_at) {
+        const tokenManager = new TokenManager(oauth, userData.discord_id, getUserDataFromDatabase, updateAccessToken);
+        const { newAccessToken, newRefreshToken, expiresIn } = await tokenManager.refreshToken(tokenManager.refreshTokenFunc.bind(tokenManager));
+  
+        // Calculate the new expiration timestamp
+        const expiresAt = Date.now() + expiresIn * 1000;
+  
+        await updateAccessToken(userData.user_id, newAccessToken, newRefreshToken, expiresAt);
+      }
+  
+      // Generate a new session token for the user
+      const sessionToken = jwt.sign({ user_id: userData.user_id }, jwtSecret, { expiresIn: '10s' });
+  
+      res.json({ sessionToken });
+  
     } catch (error) {
-      console.error('Error refreshing access token:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }  
-  
-async function getNewAccessToken(refreshToken) {
-    try{
-        console.log('Refresh token:', refreshToken);
-        const tokenResponse = await axios.post('https://discord.com/api/oauth2/token', {
-        client_id: DISCORD_CLIENT_ID,
-        client_secret: DISCORD_CLIENT_SECRET,
-        refresh_token: refreshToken,
-        grant_type: 'refresh_token',
-        }, {
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        });
-
-    
-        const { access_token: newAccessToken } = tokenResponse.data;
-        return newAccessToken;
-    } catch (error) {
-        console.error('Error refreshing access token:', error);
-        console.log('Error response:', error.response.data);
-        throw error;
+        console.error('Error during reauthentication:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 }
+  
 
+async function discordOAuth2(req, res) {
+    const { code } = req.query;
+    try {
+        const tokenResponse = await oauth.tokenRequest({
+            clientId: DISCORD_CLIENT_ID,
+            clientSecret: DISCORD_CLIENT_SECRET,
+            grantType: 'authorization_code',
+            code,
+            scope: 'identify',
+            redirectUri: DISCORD_REDIRECT_URI,
+        });
+
+        const { access_token: accessToken, refresh_token: refreshToken, expires_in: expiresIn } = tokenResponse;
+
+        // Calculate the expiration timestamp
+        const expiresAt = Date.now() + expiresIn * 1000;
+
+        // Retrieve the user's information using the access token
+        const userResponse = await oauth.getUser(accessToken);
+
+        // After retrieving the user's data
+        const userData = userResponse;
+
+        // Generate a session token (e.g., a JSON Web Token or JWT)
+        const sessionToken = jwt.sign({ user_id: userData.id }, jwtSecret, { expiresIn: '10s' });
+
+        // Save the access token, userData, and sessionToken in your database, and create a session for the user
+        console.log(`New OAUTH: Updating discord data.\n\taccess_token: ${accessToken}\n\trefresh_token: ${refreshToken}\n\texpires at: ${expiresAt}`)
+        const session = await createUser(userData, accessToken, refreshToken, expiresAt);
+
+        // Redirect the user back to your frontend, sending the session token as a query parameter
+        res.redirect(`http://localhost:3000?sessionToken=${sessionToken}`); // Replace with the appropriate frontend route
+    } catch (error) {
+        console.error('Error during Discord OAuth2:', error);
+        res.status(500).json({ error: 'Internal server error' });
+        console.log(error.response)
+    }
+}
 
   async function getCurrentUser(req, res) {
     try {
@@ -125,4 +122,4 @@ async function getNewAccessToken(refreshToken) {
     }
   }
 
-module.exports = { discordOAuth2, getCurrentUser, refreshAccessToken, updateAccessToken, getUserDataFromDatabase, getNewAccessToken };
+module.exports = { discordOAuth2, getCurrentUser, updateAccessToken, getUserDataFromDatabase, reauthenticateUser, oauth }; // Add oauth to the exports

@@ -20,7 +20,8 @@ db.run(
     username TEXT,
     discriminator TEXT,
     access_token TEXT,
-    refresh_token TEXT
+    refresh_token TEXT,
+    expires_at TIMESTAMP
   )`,
   (err) => {
     if (err) {

@@ -1,93 +1,77 @@
-// LoginForm.js
+// security/LoginForm.js
 
-import React, { useState, useEffect } from 'react';
-import { Layout } from 'antd';
+import React from 'react';
+import { Layout, Alert } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './LoginForm.css';
+import discordLogo from '../images/discord-logo.png';
 
 const { Content } = Layout;
 
-const LoginForm = ({ onAuthenticate }) => {
-  const [formData, setFormData] = useState({ username: '', password: '' });
+const LoginForm = ({ stateMessage }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleRedirectToRegister = () => {
-    navigate('/register');
-  };
-
-  const handleAuthenticate = async () => {
-    const sessionTokenParam = new URLSearchParams(location.search).get('sessionToken');
-    if (sessionTokenParam) {
-      localStorage.setItem('sessionToken', sessionTokenParam);
-      navigate('/');
-      return;
-    }
-  
-    try {
-      const token = await onAuthenticate(formData.username, formData.password);
-      localStorage.setItem('sessionToken', token);
-      navigate('/');
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  function LoginWithDiscordButton() {
+  const LoginWithDiscordButton = () => {
     const clientId = '1096750568388702228';
     const redirectUri = encodeURIComponent('http://localhost:3001/api-ui/user/auth/discord/callback');
     const scope = encodeURIComponent('identify email');
-  
-    const handleClick = () => {
-      window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
-    };
-  
-    return <button onClick={handleClick}>Login with Discord</button>;
-  }
+    const sessionToken = localStorage.getItem('sessionToken');
 
+    const handleClick = (event) => {
+      event.preventDefault(); // Add this line to prevent form submission
+
+      if (sessionToken) {
+        // Try to reauthenticate
+        fetch('/api-ui/user/reauth', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const { sessionToken } = data;
+            if (sessionToken) {
+              localStorage.setItem('sessionToken', sessionToken);
+              navigate('/');
+            } else {
+              // Session could not be reauthenticated, redirect to Discord OAuth2
+              window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+            }
+          })
+          .catch((error) => console.error(error));
+      } else {
+        // No session token found, redirect to Discord OAuth2
+        window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+      }
+    };
+    
+    return (
+      <div style={{ textAlign: 'center' }}>
+        <button
+          onClick={(event) => handleClick(event)}
+          className="login-form-discord-btn"
+          style={{ margin: '0 auto' }}
+        >
+          <img src={discordLogo} alt="Discord Logo" className="discord-logo" />
+          Login with Discord
+        </button>
+      </div>
+    );
+    
+  }
   return (
     <Layout style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <Content className="login-form-content">
-        <form onSubmit={(event) => {
-          event.preventDefault();
-          handleAuthenticate();
-        }} className="login-form">
+        <form className="login-form">
           <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Log In</h2>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            placeholder="Username"
-            className="login-form-input"
-          />
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Password"
-            className="login-form-input"
-          />
-          <button type="submit" className="login-form-submit-btn">Log In</button>
-          <button
-            type="button"
-            className="login-form-submit-btn"
-            onClick={handleRedirectToRegister}
-            style={{ display: 'block', margin: '0 auto', marginTop: '1rem' }}
-          >
-            Register
-          </button>
+          {stateMessage && <Alert message={stateMessage} type="info" />}
           <LoginWithDiscordButton />
         </form>
       </Content>
     </Layout>
-  );
+  );  
 };
 
 export default LoginForm;

@@ -1,5 +1,7 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, useLocation } from 'react-router-dom';
+// src/App.js
+
+import {React, useState } from 'react';
+import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Menu } from 'antd';
 import './App.css';
 import Home from './Home';
@@ -8,18 +10,28 @@ import RegisterForm from './Security/RegisterForm';
 import LoginForm from './Security/LoginForm';
 import DiscordCallback from './Security/Discord';
 import RequireAuth, { useAuthenticatedState } from './Security/RequireAuth';
+import useInactivityLogout from './Security/userInactivityLogout';
 
 const { Header, Content, Sider } = Layout;
 
 function AppContent() {
   const token = localStorage.getItem('sessionToken');
   const location = useLocation();
-  const authenticated = useAuthenticatedState(token, location);
+  const navigate = useNavigate();
+  const { authenticated, setAuthenticated } = useAuthenticatedState(token, location); // Extract setAuthenticated from the authenticated object
 
-  const handleLogout = () => {
+  const [stateMessage, setStateMessage] = useState(null);
+  
+  const handleLogout = (navigate, message) => {
     localStorage.removeItem('sessionToken');
-    window.location.href = '/';
+    if (message) {
+      setStateMessage(message);
+    }
+    setAuthenticated(false);
+    navigate('/login');
   };
+  
+  useInactivityLogout(() => handleLogout(navigate, 'You have been logged out due to inactivity.'), 3600, authenticated, setStateMessage);
 
   const headerHeight = 64; // Update this value to match your header height
 
@@ -39,7 +51,7 @@ function AppContent() {
               <Menu.Item key="3">
                 <Link to="/control">Server Control</Link>
               </Menu.Item>
-              <Menu.Item key="4" style={{ marginTop: 'auto' }} onClick={handleLogout}>
+              <Menu.Item key="4" style={{ marginTop: 'auto' }} onClick={() => handleLogout(navigate, 'You have manually logged out.')}>
                 Logout
               </Menu.Item>
             </Menu>
@@ -51,7 +63,7 @@ function AppContent() {
               <Route path="/" element={<RequireAuth sessionToken={token} component={Home} />} />
               <Route path="/status" element={<RequireAuth sessionToken={token} component={ServerStatus} nestedObject="Performance (lag)" />} />
               <Route path="/control" element={<RequireAuth sessionToken={token} component={ServerStatus} />} />
-              <Route path="/login" element={<LoginForm />} />
+              <Route path="/login" element={<LoginForm stateMessage={stateMessage} />} />
               <Route path="/register" element={<RegisterForm />} />
               <Route path="/api-ui/user/auth/discord/callback" element={<DiscordCallback />} />
             </Routes>
