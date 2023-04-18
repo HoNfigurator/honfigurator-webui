@@ -1,29 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Statistic, Row, Col, Progress } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { Statistic, Row, Col, Progress } from 'antd';
 import axios from 'axios';
 import SkippedFramesGraphAll from './SkippedFramesGraphAll';
 
-function useWindowDimensions() {
-  const [windowDimensions, setWindowDimensions] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
+// function useWindowDimensions() {
+//   const [windowDimensions, setWindowDimensions] = useState({
+//     width: window.innerWidth,
+//     height: window.innerHeight,
+//   });
 
-  useEffect(() => {
-    function handleResize() {
-      setWindowDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    }
+//   useEffect(() => {
+//     function handleResize() {
+//       setWindowDimensions({
+//         width: window.innerWidth,
+//         height: window.innerHeight,
+//       });
+//     }
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+//     window.addEventListener('resize', handleResize);
+//     return () => window.removeEventListener('resize', handleResize);
+//   }, []);
 
-  return windowDimensions;
-}
+//   return windowDimensions;
+// }
 
 async function fetchStats() {
   try {
@@ -44,34 +43,33 @@ async function fetchStats() {
     ];
 
     const [
-      { data: serverIP},
-      { data: serverTotalAllowed},
-      { data: serversTotal },
-      { data: cpusTotal },
-      { data: cpusReserved },
-      { data: totalPerCore },
-      { data: cpuUsed },
-      { data: memoryUsed },
-      { data: memoryTotal },
-      { data: numMatchesInGame},
-      { data: numPlayersInGame},
-      { data: skippedFramesData }
+      { data: serverIPResponse },
+      { data: serverTotalAllowedResponse },
+      { data: serversTotalResponse },
+      { data: cpusTotalResponse },
+      { data: cpusReservedResponse },
+      { data: totalPerCoreResponse },
+      { data: cpuUsedResponse },
+      { data: memoryUsedResponse },
+      { data: memoryTotalResponse },
+      { data: numMatchesInGameResponse },
+      { data: numPlayersInGameResponse },
+      { data: skippedFramesDataResponse }
     ] = await Promise.all(requests);
 
     return {
-      serverIP,
-      serverTotalAllowed,
-      serversTotal,
-      cpusTotal,
-      cpusReserved,
-      totalPerCore,
-      cpuUsed,
-      memoryUsed,
-      memoryTotal,
-
-      numMatchesInGame,
-      numPlayersInGame,
-      skippedFramesData
+      serverIP: serverIPResponse,
+      serverTotalAllowed: serverTotalAllowedResponse.total_allowed_servers,
+      serversTotal: serversTotalResponse.total_servers,
+      cpusTotal: cpusTotalResponse.total_cpus,
+      cpusReserved: cpusReservedResponse.num_reserved_cpus,
+      totalPerCore: totalPerCoreResponse.svr_total_per_core,
+      cpuUsed: cpuUsedResponse.cpu_usage,
+      memoryUsed: memoryUsedResponse.memory_usage,
+      memoryTotal: memoryTotalResponse.memory_total,
+      numMatchesInGame: numMatchesInGameResponse,
+      numPlayersInGame: numPlayersInGameResponse.num_players_ingame,
+      skippedFramesData: skippedFramesDataResponse,
     };
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -80,9 +78,8 @@ async function fetchStats() {
 }
 
 function Home() {
-  const navigate = useNavigate();
   const [stats, setStats] = useState({});
-  const { width } = useWindowDimensions();
+  // const { width } = useWindowDimensions();
 
   useEffect(() => {
     async function fetchInitialStats() {
@@ -97,10 +94,6 @@ function Home() {
     }, 5000);
     return () => clearInterval(intervalId);
   }, []);
-  
-  const handleClick = () => {
-    navigate('/configs');
-  };
 
   return (
     <div>
