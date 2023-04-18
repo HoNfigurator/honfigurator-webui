@@ -1,16 +1,17 @@
-// security/LoginForm.js
-
 import React from 'react';
 import { Layout, Alert } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './LoginForm.css';
 import discordLogo from '../images/discord-logo.png';
+import { useAuthenticatedState } from './RequireAuth';
 
 const { Content } = Layout;
 
 const LoginForm = ({ stateMessage }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const token = localStorage.getItem('sessionToken');
+  const { setAuthenticated } = useAuthenticatedState(token, location);
 
   const LoginWithDiscordButton = () => {
     const clientId = '1096750568388702228';
@@ -19,7 +20,7 @@ const LoginForm = ({ stateMessage }) => {
     const sessionToken = localStorage.getItem('sessionToken');
 
     const handleClick = (event) => {
-      event.preventDefault(); // Add this line to prevent form submission
+      event.preventDefault();
 
       if (sessionToken) {
         // Try to reauthenticate
@@ -31,9 +32,11 @@ const LoginForm = ({ stateMessage }) => {
         })
           .then((response) => response.json())
           .then((data) => {
-            const { sessionToken } = data;
+            const { sessionToken, tokenExpiry } = data;
             if (sessionToken) {
               localStorage.setItem('sessionToken', sessionToken);
+              localStorage.setItem('tokenExpiry', tokenExpiry);
+              setAuthenticated(true);
               navigate('/');
             } else {
               // Session could not be reauthenticated, redirect to Discord OAuth2
@@ -61,6 +64,7 @@ const LoginForm = ({ stateMessage }) => {
     );
     
   }
+
   return (
     <Layout style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <Content className="login-form-content">

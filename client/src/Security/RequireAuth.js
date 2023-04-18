@@ -10,35 +10,52 @@ function useCurrentUser(sessionToken, location) {
 
   const debouncedFetchCurrentUser = useRef(null);
 
+  const queryParams = new URLSearchParams(location.search);
+  const sessionTokenFromQuery = queryParams.get('sessionToken');
+  const tokenExpiryFromQuery = queryParams.get('tokenExpiry');
+
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const sessionTokenParam = queryParams.get('sessionToken');
-    if (sessionTokenParam) {
-      sessionToken = sessionTokenParam;
-      localStorage.setItem('sessionToken', sessionToken);
+    if (sessionTokenFromQuery) {
+      localStorage.setItem('sessionToken', sessionTokenFromQuery);
+    }
+    if (tokenExpiryFromQuery) {
+      localStorage.setItem('tokenExpiry', tokenExpiryFromQuery);
     }
 
-    function isTokenExpiring() {
-      const tokenExpiration = localStorage.getItem('tokenExpiration');
-      if (!tokenExpiration) return true;
+    const storedSessionToken = localStorage.getItem('sessionToken') || sessionToken;
 
-      const expiresIn = new Date(tokenExpiration) - new Date();
-      const bufferTime = 60000; // 1 minute buffer time
+    if (!storedSessionToken) {
+      console.log("no sessionToken, leaving");
+      setLoading(false);
+      setAuthenticated(false);
+      return;
+    }
+  
+    function isTokenExpiring(tokenExpiry) {
+      const expiresIn = new Date(tokenExpiry) - new Date();
+      const bufferTime = 1000; // 1 minute buffer time
       return expiresIn <= bufferTime;
     }
 
-    if (!sessionToken) {
-      setLoading(false);
-      return;
-    }
-
-    async function fetchCurrentUser(refreshOnly = false) {
+    async function fetchCurrentUser() {
       try {
-        if (refreshOnly && !isTokenExpiring()) {
+        const tokenExpiry = localStorage.getItem('tokenExpiry');
+        if (!tokenExpiry) {
+          console.log("no expiry token in storage.")
+          setAuthenticated(false);
+          return;
+        }
+        
+        if (!isTokenExpiring(tokenExpiry)) {
+          setAuthenticated(true);
           return;
         }
 
-        const token = localStorage.getItem('sessionToken');
+        
+        console.log(`Token is expiring: ${tokenExpiry}`)
+    
+        const token = localStorage.getItem('sessionToken') || storedSessionToken;
+
         const response = await fetch('/api-ui/user/refresh', {
           method: 'POST',
           headers: {
@@ -62,7 +79,7 @@ function useCurrentUser(sessionToken, location) {
 
         // Update the session token and expiration with the new ones
         localStorage.setItem('sessionToken', data.sessionToken);
-        localStorage.setItem('tokenExpiration', data.tokenExpiration);
+        localStorage.setItem('tokenExpiry', data.tokenExpiry);
       } catch (error) {
         console.error('Error fetching current user:', error);
       } finally {
@@ -72,12 +89,12 @@ function useCurrentUser(sessionToken, location) {
 
     fetchCurrentUser();
 
-    debouncedFetchCurrentUser.current = setTimeout(() => {
-      fetchCurrentUser(true);
+    debouncedFetchCurrentUser.current = setInterval(() => {
+      fetchCurrentUser();
     }, 10000);
 
-    return () => clearTimeout(debouncedFetchCurrentUser.current);
-  }, [sessionToken, location, setCurrentUser]);
+    return () => clearInterval(debouncedFetchCurrentUser.current);
+  }, [sessionToken, location, setCurrentUser, sessionTokenFromQuery, tokenExpiryFromQuery]);
 
   return { loading, authenticated, currentUser, setAuthenticated };
 }

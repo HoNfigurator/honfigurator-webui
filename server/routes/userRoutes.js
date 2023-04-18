@@ -3,7 +3,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
-const { jwtSecret } = require('../config');
+const { jwtSecret, SESSION_TIMEOUT } = require('../config');
 
 const userController = require('../controllers/userController');
 const TokenManager = require('../helpers/tokenManager');
@@ -23,7 +23,7 @@ router.get('/user/reauth', discordAuthMiddleware, userController.reauthenticateU
 // In your server's routes/userRoutes.js file
 router.post('/user/refresh', authMiddlewareAllowExpired, discordAuthMiddleware, async (req, res) => {
     try {
-      console.log("received refresh request");
+      console.log(`received refresh request. ${req.user.user_id}`);
   
       // Check for user inactivity
       const currentTime = Math.floor(Date.now() / 1000);
@@ -35,9 +35,12 @@ router.post('/user/refresh', authMiddlewareAllowExpired, discordAuthMiddleware, 
       }
   
       // Generate a new session token
-      const newSessionToken = jwt.sign({ user_id: req.user.user_id }, jwtSecret, { expiresIn: '10s' });
+      const newSessionToken = jwt.sign({ user_id: req.user.user_id }, jwtSecret, { expiresIn: SESSION_TIMEOUT });
+
+      // Calculate the token expiration time
+      const tokenExpiration = new Date(jwt.decode(newSessionToken).exp * 1000).toISOString();
   
-      res.json({ sessionToken: newSessionToken, user: req.user });
+      res.json({ sessionToken: newSessionToken, user: req.user, tokenExpiry: tokenExpiration });
     } catch (error) {
       console.error('Failed to refresh session token:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -116,7 +119,7 @@ async function authMiddleware(req, res, next) {
 
 async function discordAuthMiddleware(req, res, next) {
     try {
-        console.log("discord token verification")
+        console.log(`discord token verification. ${req.user.user_id}`)
         const userData = await userController.getUserDataFromDatabase({ discord_id: req.user.user_id });
 
         // Check if the access token is about to expire or has already expired

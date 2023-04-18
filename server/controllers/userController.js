@@ -5,7 +5,7 @@ const DiscordOAuth2 = require('discord-oauth2');
 const oauth = new DiscordOAuth2();
 
 const { createUser, getUserDataFromDatabase, updateAccessToken } = require('../db/session'); // Import the functions
-const { jwtSecret, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI } = require('../config');
+const { jwtSecret, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI, SESSION_TIMEOUT } = require('../config');
 const TokenManager = require('../helpers/tokenManager');
 
 // server/controllers/userController.js
@@ -46,9 +46,12 @@ async function reauthenticateUser(req, res) {
       }
   
       // Generate a new session token for the user
-      const sessionToken = jwt.sign({ user_id: userData.user_id }, jwtSecret, { expiresIn: '10s' });
-  
-      res.json({ sessionToken });
+      const sessionToken = jwt.sign({ user_id: userData.user_id }, jwtSecret, { expiresIn: SESSION_TIMEOUT });
+
+      // Calculate the token expiration time
+      const tokenExpiration = new Date(Date.now() + jwt.decode(sessionToken).exp * 1000).toISOString();
+      
+      res.json({ sessionToken: sessionToken, user_data: userData, tokenExpiration: tokenExpiration });
   
     } catch (error) {
         console.error('Error during reauthentication:', error);
@@ -81,14 +84,16 @@ async function discordOAuth2(req, res) {
         const userData = userResponse;
 
         // Generate a session token (e.g., a JSON Web Token or JWT)
-        const sessionToken = jwt.sign({ user_id: userData.id }, jwtSecret, { expiresIn: '10s' });
+        const sessionToken = jwt.sign({ user_id: userData.id }, jwtSecret, { expiresIn: SESSION_TIMEOUT });
 
+        const tokenExpiration = new Date(jwt.decode(sessionToken).exp * 1000).toISOString();
+        console.log(`expiration! ${tokenExpiration}`);
         // Save the access token, userData, and sessionToken in your database, and create a session for the user
         console.log(`New OAUTH: Updating discord data.\n\taccess_token: ${accessToken}\n\trefresh_token: ${refreshToken}\n\texpires at: ${expiresAt}`)
         const session = await createUser(userData, accessToken, refreshToken, expiresAt);
 
         // Redirect the user back to your frontend, sending the session token as a query parameter
-        res.redirect(`http://localhost:3000?sessionToken=${sessionToken}`); // Replace with the appropriate frontend route
+        res.redirect(`http://localhost:3000?sessionToken=${sessionToken}&tokenExpiry=${tokenExpiration}`); // Replace with the appropriate frontend route
     } catch (error) {
         console.error('Error during Discord OAuth2:', error);
         res.status(500).json({ error: 'Internal server error' });

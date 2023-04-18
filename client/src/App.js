@@ -24,6 +24,7 @@ function AppContent() {
   
   const handleLogout = (navigate, message) => {
     localStorage.removeItem('sessionToken');
+    localStorage.removeItem('tokenExpiry')
     if (message) {
       setStateMessage(message);
     }
