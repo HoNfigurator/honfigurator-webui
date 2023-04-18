@@ -33,7 +33,7 @@ function useCurrentUser(sessionToken, location) {
   
     function isTokenExpiring(tokenExpiry) {
       const expiresIn = new Date(tokenExpiry) - new Date();
-      const bufferTime = 1000; // 1 minute buffer time
+      const bufferTime = 60000; // 1 minute buffer time
       return expiresIn <= bufferTime;
     }
 
