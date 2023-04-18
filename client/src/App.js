@@ -6,6 +6,7 @@ import { Layout, Menu } from 'antd';
 import './App.css';
 import Home from './Home';
 import ServerStatus from './ServerStatus';
+import UsersandRoles, { UserTable } from './Profile/UsersRoles';
 import RegisterForm from './Security/RegisterForm';
 import LoginForm from './Security/LoginForm';
 import DiscordCallback from './Security/Discord';
@@ -50,7 +51,7 @@ function AppContent() {
                 <Link to="/status">Server Status</Link>
               </Menu.Item>
               <Menu.Item key="3">
-                <Link to="/control">Server Control</Link>
+                <Link to="/roles">Users & Roles</Link>
               </Menu.Item>
               <Menu.Item key="4" style={{ marginTop: 'auto' }} onClick={() => handleLogout(navigate, 'You have manually logged out.')}>
                 Logout
@@ -63,7 +64,7 @@ function AppContent() {
             <Routes>
               <Route path="/" element={<RequireAuth sessionToken={token} component={Home} />} />
               <Route path="/status" element={<RequireAuth sessionToken={token} component={ServerStatus} nestedObject="Performance (lag)" />} />
-              <Route path="/control" element={<RequireAuth sessionToken={token} component={ServerStatus} />} />
+              <Route path="/roles" element={<RequireAuth sessionToken={token} component={UsersandRoles} />} />
               <Route path="/login" element={<LoginForm stateMessage={stateMessage} />} />
               <Route path="/register" element={<RegisterForm />} />
               <Route path="/api-ui/user/auth/discord/callback" element={<DiscordCallback />} />

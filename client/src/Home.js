@@ -27,19 +27,19 @@ import SkippedFramesGraphAll from './SkippedFramesGraphAll';
 async function fetchStats() {
   try {
     const requests = [
-      axios.get('/api/get_server_config_item?key=svr_ip'),
-      axios.get('/api/get_total_allowed_servers'),
-      axios.get('/api/get_total_servers'),
-      axios.get('/api/get_total_cpus'),
-      axios.get('/api/get_num_reserved_cpus'),
-      axios.get('/api/get_server_config_item?key=svr_total_per_core'),
-      axios.get('/api/get_cpu_usage'),
-      axios.get('/api/get_memory_usage'),
-      axios.get('/api/get_memory_total'),
+      axios.get('/api-ui/get_server_config_item?key=svr_ip'),
+      axios.get('/api-ui/get_total_allowed_servers'),
+      axios.get('/api-ui/get_total_servers'),
+      axios.get('/api-ui/get_total_cpus'),
+      axios.get('/api-ui/get_num_reserved_cpus'),
+      axios.get('/api-ui/get_server_config_item?key=svr_total_per_core'),
+      axios.get('/api-ui/get_cpu_usage'),
+      axios.get('/api-ui/get_memory_usage'),
+      axios.get('/api-ui/get_memory_total'),
 
-      axios.get('/api/get_num_matches_ingame'),
-      axios.get('/api/get_num_players_ingame'),
-      axios.get('/api/get_skipped_frame_data?port=all')
+      axios.get('/api-ui/get_num_matches_ingame'),
+      axios.get('/api-ui/get_num_players_ingame'),
+      axios.get('/api-ui/get_skipped_frame_data?port=all')
     ];
 
     const [

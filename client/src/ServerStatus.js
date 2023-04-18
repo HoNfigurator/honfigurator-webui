@@ -3,13 +3,12 @@ import axios from 'axios';
 import { Card, Row, Col, Collapse, Button } from 'antd';
 import StatusDetail from './StatusDetail';
 
-
 function ServerStates() {
   const [serverStates, setServerStates] = useState([]);
   const [activeKey, setActiveKey] = useState(null);
 
   const fetchServerStates = async () => {
-    const response = await axios.get('/api/get_instances_status');
+    const response = await axios.get('/api-ui/get_instances_status',authHeader);
     setServerStates(response.data);
   };
 
@@ -33,6 +32,8 @@ function ServerStates() {
       return '#d9d029' // Yellow
     } else if (status === 'Occupied' && scheduled_shutdown === 'Yes') {
       return '#fc8c03' // Orange
+    } else if (status === 'Ready' && scheduled_shutdown === 'Yes') {
+      return '#fc8c03' // Orange
     } else if (status === 'Queued') {
       return '#8e918e' // Greay
     }
@@ -42,10 +43,10 @@ function ServerStates() {
   const handleServerAction = async (port, action) => {
     // Make axios call to appropriate endpoint based on the action
     if (action === 'stop') {
-      await axios.post('/api/stop_server', { port });
+      await axios.post('/api-ui/stop_server', { port });
     } else if (action === 'start') {
       // Replace with your actual start server API endpoint
-      await axios.post('/api/start_server', { port });
+      await axios.post('/api-ui/start_server', { port });
     }
   
     // Fetch updated server states after the action is performed

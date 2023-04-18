@@ -20,6 +20,8 @@ router.get('/user/current', authMiddleware, discordAuthMiddleware, userControlle
 // Reauthenticate a user, against stored discord tokens
 router.get('/user/reauth', discordAuthMiddleware, userController.reauthenticateUser);
 
+//// ADD GAME SERVER API CALLS HERE
+
 // In your server's routes/userRoutes.js file
 router.post('/user/refresh', authMiddlewareAllowExpired, discordAuthMiddleware, async (req, res) => {
     try {
