@@ -17,13 +17,7 @@ const RegisterForm = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      const response = await fetch('/api-ui/user/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await axiosInstanceUI.post('/user/register', formData);
       if (response.status === 201) {
         alert('User account successfully created');
         navigate('/login');

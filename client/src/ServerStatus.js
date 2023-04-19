@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Card, Row, Col, Collapse, Button } from 'antd';
 import StatusDetail from './StatusDetail';
+import { axiosInstanceServer } from './Security/axiosRequestFormat';
 
 function ServerStates() {
   const [serverStates, setServerStates] = useState([]);
   const [activeKey, setActiveKey] = useState(null);
 
   const fetchServerStates = async () => {
-    const response = await axios.get('/api-ui/get_instances_status',authHeader);
+    const response = await axiosInstanceServer.get('/get_instances_status');
     setServerStates(response.data);
   };
 
@@ -43,10 +43,10 @@ function ServerStates() {
   const handleServerAction = async (port, action) => {
     // Make axios call to appropriate endpoint based on the action
     if (action === 'stop') {
-      await axios.post('/api-ui/stop_server', { port });
+      await axiosInstanceServer.post('/stop_server', { port });
     } else if (action === 'start') {
       // Replace with your actual start server API endpoint
-      await axios.post('/api-ui/start_server', { port });
+      await axiosInstanceServer.post('/start_server', { port });
     }
   
     // Fetch updated server states after the action is performed

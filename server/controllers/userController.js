@@ -14,12 +14,14 @@ async function reauthenticateUser(req, res) {
       const authHeader = req.headers.authorization;
       console.log(authHeader);
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log("no authorization header.")
         return res.status(401).json({ error: 'Unauthorized' });
       }
   
       const token = authHeader.split(' ')[1];
       console.log(token);
       if (!token) {
+        console.log("no token in authorization header")
         return res.status(401).json({ error: 'Unauthorized' });
       }
   
@@ -36,6 +38,7 @@ async function reauthenticateUser(req, res) {
   
       // If access_token is expired, try to refresh it
       if (Date.now() >= userData.expires_at) {
+        console.log("Discord access token is expired. Attempting renewal")
         const tokenManager = new TokenManager(oauth, userData.discord_id, getUserDataFromDatabase, updateAccessToken);
         const { newAccessToken, newRefreshToken, expiresIn } = await tokenManager.refreshToken(tokenManager.refreshTokenFunc.bind(tokenManager));
   
@@ -87,7 +90,7 @@ async function discordOAuth2(req, res) {
         const sessionToken = jwt.sign({ user_id: userData.id }, jwtSecret, { expiresIn: SESSION_TIMEOUT });
 
         const tokenExpiration = new Date(jwt.decode(sessionToken).exp * 1000).toISOString();
-        console.log(`expiration! ${tokenExpiration}`);
+        console.log(`new expiration: ${tokenExpiration}`);
         // Save the access token, userData, and sessionToken in your database, and create a session for the user
         console.log(`New OAUTH: Updating discord data.\n\taccess_token: ${accessToken}\n\trefresh_token: ${refreshToken}\n\texpires at: ${expiresAt}`)
         const session = await createUser(userData, accessToken, refreshToken, expiresAt);

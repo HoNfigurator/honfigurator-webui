@@ -1,6 +1,6 @@
 import React from 'react';
-import axios from 'axios';
-import { Table, Button, Modal, Form, Input, Select, Space, Popconfirm, Tooltip } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, Popconfirm } from 'antd';
+import { axiosInstanceServer } from '../Security/axiosRequestFormat';
 
 const { Option } = Select;
 
@@ -93,50 +93,50 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
   
     const [userForm] = Form.useForm();
     const [roleForm] = Form.useForm();
-
-
-    const [tooltipVisible, setTooltipVisible] = React.useState(false);
-    const handleNumericKeyPress = (e) => {
-        if (!/[0-9]/.test(e.key)) {
-            e.preventDefault();
-            setTooltipVisible(true);
-            setTimeout(() => setTooltipVisible(false), 2000);
-        }
-    };
-  
+ 
     const handleUserOk = async () => {
-        try {
-          const values = await userForm.validateFields();
-          const payload = {
-            nickname: values.nickname,
-            discord_id: values.discordId,
-            roles: values.roles,
-          };
-      
-          if (editingUser) {
-            const response = await axios.post("/api-ui/users/add", payload);
-            setUsers(users.map((user) => (user.discord_id === editingUser.discord_id ? response.data : user)));
-            setEditingUser(null);
+      try {
+        const values = await userForm.validateFields();
+        const payload = {
+          nickname: values.nickname,
+          discord_id: values.discord_id,
+          roles: values.roles,
+        };
+        console.log(payload);
+    
+        if (editingUser) {
+          const response = await axiosInstanceServer.post("/users/add", payload, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          console.log("editing user")
+          setUsers(users.map((user) => (user.discord_id === editingUser.discord_id ? response.data : user)));
+          setEditingUser(null);
+        } else {
+          console.log("adding user");
+          const response = await axiosInstanceServer.post('/users/add', payload, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }).catch((error) => {
+            console.log(error);
+          });
+          console.log("adding user");
+    
+          if (response.status === 201) {
+            setUsers([...users, response.data]);
           } else {
-            const response = await axios.post('/api-ui/users/add', payload, {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-      
-            if (response.status === 201) {
-              setUsers([...users, response.data]);
-            } else {
-              console.log('Error adding user:', response.data);
-            }
+            console.log('Error adding user:', response.data);
           }
-          setUserModalVisible(false);
-          setUserModalVisible(false);
-            userForm.resetFields();
-        } catch (error) {
-          console.log(error);
         }
-      };
+        setUserModalVisible(false);
+        userForm.resetFields();
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    
       
   
     const handleRoleOk = async () => {
@@ -148,11 +148,11 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
           };
       
           if (editingRole) {
-            const response = await axios.post("/api-ui/roles/add", payload);
+            const response = await axiosInstanceServer.post("/roles/add", payload);
             setRoles(roles.map((role) => (role.name === editingRole.name ? response.data : role)));
             setEditingRole(null);
           } else {
-            const response = await axios.post('/api-ui/roles/add', payload, {
+            const response = await axiosInstanceServer.post('/roles/add', payload, {
               headers: {
                 'Content-Type': 'application/json',
               },
@@ -188,22 +188,24 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
     const handleEditUser = React.useCallback(
         (discord_id) => {
           const user = users.find((user) => user.discord_id === discord_id);
+          console.log('Editing user:', user); // Add this line
+          console.log(user.discord_id);
           if (user) {
             setEditingUser(user);
             userForm.setFieldsValue({
               nickname: user.nickname,
-              discordId: user.discord_id,
+              discord_id: user.discord_id,
               roles: user.roles,
             });
             setUserModalVisible(true);
           }
         },
-        [users, roleForm]
+        [users]
       );
   
     const handleDeleteUser = async discord_id => {
         try {
-          const response = await axios.delete(`/api-ui/users/delete/${discord_id}`);
+          const response = await axiosInstanceServer.delete(`/users/delete/${discord_id}`);
           if (response.status === 200) {
             setUsers(users.filter(user => user.discord_id !== discord_id));
           } else {
@@ -229,12 +231,12 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
             setRoleModalVisible(true);
           }
         },
-        [roles, userForm]
+        [roles]
       );
   
     const handleDeleteRole = async id => {
       try {
-        await axios.delete(`/api-ui/roles/delete/${id}`);
+        await axiosInstanceServer.delete(`/roles/delete/${id}`);
         setRoles(roles.filter(role => role.id !== id));
       } catch (error) {
         console.log(error);
@@ -243,15 +245,39 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
   
     React.useEffect(() => {
       async function fetchData() {
-        const usersResult = await axios('/api-ui/users/all');
-        const rolesResult = await axios('/api-ui/roles/all');
-        const permissionsResult = await axios('/api-ui/permissions/all');
+        const usersResult = await axiosInstanceServer.get('/users/all');
+        const rolesResult = await axiosInstanceServer.get('/roles/all');
+        const permissionsResult = await axiosInstanceServer('/permissions/all');
+        console.log('Users Result:', usersResult);
+        console.log('Roles Result:', rolesResult);
+        console.log('Permissions Result:', permissionsResult);
         setUsers(usersResult.data.filter(user => user.discord_id));
         setRoles(rolesResult.data);
         setPermissions(permissionsResult.data);
       }
       fetchData();
     }, []);
+
+    const discordIdValidator = (rule, value) => {
+      if (!value) {
+        return Promise.reject('Please enter a Discord ID');
+      }
+      if (!/^[0-9]+$/.test(value)) {
+        return Promise.reject(
+          <span>
+            Only numbers are allowed for Discord ID.{' '}
+            <a
+              href="https://www.businessinsider.com/guides/tech/discord-id#:~:text=To%20find%20a%20user's%20Discord,sidebar%20and%20select%20Copy%20ID."
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Learn more
+            </a>
+          </span>
+        );
+      }
+      return Promise.resolve();
+    };
   
     return (
         <div>
@@ -280,6 +306,7 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
             onCancel={handleCancel}
             okText={editingUser ? 'Update' : 'Add'}
             cancelText="Cancel"
+            id="userForm" // set the same value as the form prop
             >
             <Form form={userForm} layout="vertical">
                 <Form.Item
@@ -290,28 +317,17 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
                 <Input />
                 </Form.Item>
                 <Form.Item
-                label="Discord ID"
-                name="discordId"
-                rules={[{ required: true, message: 'Please enter a Discord ID' }]}
+                  label="Discord ID"
+                  name="discord_id"
+                  rules={[
+                    {
+                      validator: discordIdValidator,
+                    },
+                  ]}
                 >
-                <Tooltip
-                  title={
-                    <span>
-                      Only integers are allowed.{' '}
-                      <a
-                        href="https://www.businessinsider.com/guides/tech/discord-id#:~:text=To%20find%20a%20user's%20Discord,sidebar%20and%20select%20Copy%20ID."
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Learn more
-                      </a>
-                    </span>
-                  }
-                  visible={tooltipVisible}
-                >
-                  <Input onKeyPress={handleNumericKeyPress} />
-                </Tooltip>
+                  <Input />
                 </Form.Item>
+
                 <Form.Item
                 label="Roles"
                 name="roles"
@@ -327,35 +343,36 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
                 </Form.Item>
             </Form>
             </Modal>
-            <Modal
+          <Modal
             title={editingRole ? 'Edit Role' : 'Add Role'}
             visible={roleModalVisible}
             onOk={handleRoleOk}
             onCancel={handleCancel}
             okText={editingRole ? 'Update' : 'Add'}
             cancelText="Cancel"
+            id="roleForm" // set the same value as the form prop
             >
             <Form form={roleForm} layout="vertical">
-                <Form.Item
-                label="Name"
-                name="name"
-                rules={[{ required: true, message: 'Please enter a name' }]}
-                >
-                <Input />
-                </Form.Item>
-                <Form.Item
-                label="Endpoints"
-                name="permissions"
-                rules={[{ required: true, message: 'Please select endpoints' }]}
-                >
-                <Select mode="multiple">
-                    {Object.entries(permissions).map(([key, value]) => (
-                    <Option key={key} value={key}>
-                        {`${key}: ${value}`}
-                    </Option>
-                    ))}
-                </Select>
-                </Form.Item>
+              <Form.Item
+              label="Name"
+              name="name"
+              rules={[{ required: true, message: 'Please enter a name' }]}
+              >
+              <Input />
+              </Form.Item>
+              <Form.Item
+              label="Endpoints"
+              name="permissions"
+              rules={[{ required: true, message: 'Please select endpoints' }]}
+              >
+              <Select mode="multiple">
+                  {Object.entries(permissions).map(([key, value]) => (
+                  <Option key={key} value={key}>
+                      {`${key}: ${value}`}
+                  </Option>
+                  ))}
+              </Select>
+              </Form.Item>
             </Form>
             </Modal>
         </div>

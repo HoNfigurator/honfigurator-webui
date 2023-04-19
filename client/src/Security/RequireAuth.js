@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { axiosInstanceUI } from './axiosRequestFormat';
 
 function useCurrentUser(sessionToken, location) {
   const [loading, setLoading] = useState(true);
@@ -56,15 +57,23 @@ function useCurrentUser(sessionToken, location) {
     
         const token = localStorage.getItem('sessionToken') || storedSessionToken;
 
-        const response = await fetch('/api-ui/user/refresh', {
-          method: 'POST',
+        const response = await axiosInstanceUI.post('/user/refresh', {}, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
         });
 
-        if (!response.ok) {
+        if (response.status === 200) {
+          const data = response.data;
+          setCurrentUser(data);
+          setAuthenticated(true);
+        
+          // Update the session token and expiration with the new ones
+          localStorage.setItem('sessionToken', data.sessionToken);
+          localStorage.setItem('tokenExpiry', data.tokenExpiry);
+        } else {
+          console.log(response);
           if (response.status === 401) {
             localStorage.removeItem('sessionToken');
             setAuthenticated(false);
@@ -72,10 +81,6 @@ function useCurrentUser(sessionToken, location) {
           }
           throw new Error('Error fetching current user');
         }
-
-        const data = await response.json();
-        setCurrentUser(data);
-        setAuthenticated(true);
 
         // Update the session token and expiration with the new ones
         localStorage.setItem('sessionToken', data.sessionToken);

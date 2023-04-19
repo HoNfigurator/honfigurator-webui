@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { axiosInstanceServer } from './Security/axiosRequestFormat';
 
 function ServerControl({ serverId }) {
   const [isStopping, setIsStopping] = useState(false);
@@ -7,7 +7,7 @@ function ServerControl({ serverId }) {
   const handleStopServer = async () => {
     setIsStopping(true);
     try {
-      await axios.post(`/api/stop_server?id=${serverId}`);
+      await axiosInstanceServer.post(`/stop_server?id=${serverId}`);
     } catch (error) {
       console.error(error);
     }

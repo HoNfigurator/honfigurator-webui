@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Statistic, Row, Col, Progress } from 'antd';
 import axios from 'axios';
 import SkippedFramesGraphAll from './SkippedFramesGraphAll';
+import { axiosInstanceServer } from './Security/axiosRequestFormat';
 
 // function useWindowDimensions() {
 //   const [windowDimensions, setWindowDimensions] = useState({
@@ -27,19 +28,19 @@ import SkippedFramesGraphAll from './SkippedFramesGraphAll';
 async function fetchStats() {
   try {
     const requests = [
-      axios.get('/api-ui/get_server_config_item?key=svr_ip'),
-      axios.get('/api-ui/get_total_allowed_servers'),
-      axios.get('/api-ui/get_total_servers'),
-      axios.get('/api-ui/get_total_cpus'),
-      axios.get('/api-ui/get_num_reserved_cpus'),
-      axios.get('/api-ui/get_server_config_item?key=svr_total_per_core'),
-      axios.get('/api-ui/get_cpu_usage'),
-      axios.get('/api-ui/get_memory_usage'),
-      axios.get('/api-ui/get_memory_total'),
+      axiosInstanceServer.get('/get_server_config_item?key=svr_ip'),
+      axiosInstanceServer.get('/get_total_allowed_servers'),
+      axiosInstanceServer.get('/get_total_servers'),
+      axiosInstanceServer.get('/get_total_cpus'),
+      axiosInstanceServer.get('/get_num_reserved_cpus'),
+      axiosInstanceServer.get('/get_server_config_item?key=svr_total_per_core'),
+      axiosInstanceServer.get('/get_cpu_usage'),
+      axiosInstanceServer.get('/get_memory_usage'),
+      axiosInstanceServer.get('/get_memory_total'),
 
-      axios.get('/api-ui/get_num_matches_ingame'),
-      axios.get('/api-ui/get_num_players_ingame'),
-      axios.get('/api-ui/get_skipped_frame_data?port=all')
+      axiosInstanceServer.get('/get_num_matches_ingame'),
+      axiosInstanceServer.get('/get_num_players_ingame'),
+      axiosInstanceServer.get('/get_skipped_frame_data?port=all')
     ];
 
     const [
@@ -67,7 +68,7 @@ async function fetchStats() {
       cpuUsed: cpuUsedResponse.cpu_usage,
       memoryUsed: memoryUsedResponse.memory_usage,
       memoryTotal: memoryTotalResponse.memory_total,
-      numMatchesInGame: numMatchesInGameResponse,
+      numMatchesInGame: numMatchesInGameResponse.numMatchesInGameResponse,
       numPlayersInGame: numPlayersInGameResponse.num_players_ingame,
       skippedFramesData: skippedFramesDataResponse,
     };

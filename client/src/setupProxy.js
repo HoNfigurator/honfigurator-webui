@@ -11,12 +11,19 @@ module.exports = function(app) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'https://localhost:5000',
-      changeOrigin: true,
-      secure: true,
-      agent: agent
+      target: 'http://localhost:3001',
+      changeOrigin: true
     })
   );
+  // app.use(
+  //   '/api',
+  //   createProxyMiddleware({
+  //     target: 'https://localhost:5000',
+  //     changeOrigin: true,
+  //     secure: true,
+  //     agent: agent,
+  //   })
+  // );
 
   app.use(
     '/api-ui',

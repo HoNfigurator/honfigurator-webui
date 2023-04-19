@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import './LoginForm.css';
 import discordLogo from '../images/discord-logo.png';
 import { useAuthenticatedState } from './RequireAuth';
+import { axiosInstanceUI } from './axiosRequestFormat';
 
 const { Content } = Layout;
 
@@ -24,12 +25,7 @@ const LoginForm = ({ stateMessage }) => {
 
       if (sessionToken) {
         // Try to reauthenticate
-        fetch('/api-ui/user/reauth', {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${sessionToken}`,
-          },
-        })
+        axiosInstanceUI.get('/user/reauth')
           .then((response) => response.json())
           .then((data) => {
             const { sessionToken, tokenExpiry } = data;

@@ -35,6 +35,7 @@ class TokenManager {
     const userData = await this.getUserDataFromDatabase({ discord_id: this.user_id });
   
     if (!userData) {
+      console.log(`no userdata from getUserDataFromDatabase(discord_id: ${this.user_id}`)
       throw new Error('Unauthorized');
     }
   
