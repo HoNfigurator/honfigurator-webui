@@ -7,29 +7,31 @@ const agent = new https.Agent({
   rejectUnauthorized: true
 });
 
-module.exports = function(app) {
+module.exports = function (app, selectedServer) {
   app.use(
     '/api',
     createProxyMiddleware({
       target: 'http://localhost:3001',
-      changeOrigin: true
+      changeOrigin: true,
+      onProxyReq: (proxyReq, req, res) => {
+        // Modify the request body to include the selected server
+        const requestBody = JSON.stringify({
+          ...JSON.parse(req.body || '{}'),
+          server: selectedServer,
+        });
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(requestBody));
+        proxyReq.write(requestBody);
+        proxyReq.end();
+      },
     })
   );
-  // app.use(
-  //   '/api',
-  //   createProxyMiddleware({
-  //     target: 'https://localhost:5000',
-  //     changeOrigin: true,
-  //     secure: true,
-  //     agent: agent,
-  //   })
-  // );
 
   app.use(
     '/api-ui',
     createProxyMiddleware({
       target: 'http://localhost:3001',
-      changeOrigin: true
+      changeOrigin: true,
     })
   );
 };

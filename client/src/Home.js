@@ -1,76 +1,46 @@
-import React, { useState, useEffect } from 'react';
+// Home.js
+
+import React, { useState, useEffect, useContext } from 'react';
 import { Statistic, Row, Col, Progress } from 'antd';
-import axios from 'axios';
 import SkippedFramesGraphAll from './SkippedFramesGraphAll';
-import { axiosInstanceServer } from './Security/axiosRequestFormat';
+import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
+import { SelectedServerContext } from './App';
 
-// function useWindowDimensions() {
-//   const [windowDimensions, setWindowDimensions] = useState({
-//     width: window.innerWidth,
-//     height: window.innerHeight,
-//   });
-
-//   useEffect(() => {
-//     function handleResize() {
-//       setWindowDimensions({
-//         width: window.innerWidth,
-//         height: window.innerHeight,
-//       });
-//     }
-
-//     window.addEventListener('resize', handleResize);
-//     return () => window.removeEventListener('resize', handleResize);
-//   }, []);
-
-//   return windowDimensions;
-// }
-
-async function fetchStats() {
+async function fetchStats(selectedServer) {
   try {
+    const axiosInstanceServer = createAxiosInstanceServer(selectedServer);
+    
     const requests = [
-      axiosInstanceServer.get('/get_server_config_item?key=svr_ip'),
-      axiosInstanceServer.get('/get_total_allowed_servers'),
-      axiosInstanceServer.get('/get_total_servers'),
-      axiosInstanceServer.get('/get_total_cpus'),
-      axiosInstanceServer.get('/get_num_reserved_cpus'),
-      axiosInstanceServer.get('/get_server_config_item?key=svr_total_per_core'),
-      axiosInstanceServer.get('/get_cpu_usage'),
-      axiosInstanceServer.get('/get_memory_usage'),
-      axiosInstanceServer.get('/get_memory_total'),
-
-      axiosInstanceServer.get('/get_num_matches_ingame'),
-      axiosInstanceServer.get('/get_num_players_ingame'),
-      axiosInstanceServer.get('/get_skipped_frame_data?port=all')
+      axiosInstanceServer.get(`/get_server_config_item/svr_ip?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_total_allowed_servers?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_total_servers?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_total_cpus?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_num_reserved_cpus?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_server_config_item/svr_total_per_core?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_cpu_usage?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_memory_usage?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_memory_total?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_num_matches_ingame?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_num_players_ingame?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_skipped_frame_data/all?_t=${Date.now()}`)
     ];
 
-    const [
-      { data: serverIPResponse },
-      { data: serverTotalAllowedResponse },
-      { data: serversTotalResponse },
-      { data: cpusTotalResponse },
-      { data: cpusReservedResponse },
-      { data: totalPerCoreResponse },
-      { data: cpuUsedResponse },
-      { data: memoryUsedResponse },
-      { data: memoryTotalResponse },
-      { data: numMatchesInGameResponse },
-      { data: numPlayersInGameResponse },
-      { data: skippedFramesDataResponse }
-    ] = await Promise.all(requests);
+    const responses = await Promise.allSettled(requests);
+    const data = responses.map((response) => response.status === 'fulfilled' ? response.value.data : {});
 
     return {
-      serverIP: serverIPResponse,
-      serverTotalAllowed: serverTotalAllowedResponse.total_allowed_servers,
-      serversTotal: serversTotalResponse.total_servers,
-      cpusTotal: cpusTotalResponse.total_cpus,
-      cpusReserved: cpusReservedResponse.num_reserved_cpus,
-      totalPerCore: totalPerCoreResponse.svr_total_per_core,
-      cpuUsed: cpuUsedResponse.cpu_usage,
-      memoryUsed: memoryUsedResponse.memory_usage,
-      memoryTotal: memoryTotalResponse.memory_total,
-      numMatchesInGame: numMatchesInGameResponse.numMatchesInGameResponse,
-      numPlayersInGame: numPlayersInGameResponse.num_players_ingame,
-      skippedFramesData: skippedFramesDataResponse,
+      serverIP: data[0],
+      serverTotalAllowed: data[1].total_allowed_servers || null,
+      serversTotal: data[2].total_servers || null,
+      cpusTotal: data[3].total_cpus || null,
+      cpusReserved: data[4].num_reserved_cpus || null,
+      totalPerCore: data[5] || null,
+      cpuUsed: data[6].cpu_usage || null,
+      memoryUsed: data[7].memory_usage || null,
+      memoryTotal: data[8].memory_total || null,
+      numMatchesInGame: data[9].num_matches_ingame || null,
+      numPlayersInGame: data[10].num_players_ingame || null,
+      skippedFramesData: data[11],
     };
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -79,22 +49,24 @@ async function fetchStats() {
 }
 
 function Home() {
+  const { selectedServerValue } = useContext(SelectedServerContext);
   const [stats, setStats] = useState({});
-  // const { width } = useWindowDimensions();
 
   useEffect(() => {
     async function fetchInitialStats() {
-      const initialStats = await fetchStats();
+      const initialStats = await fetchStats(selectedServerValue);
       setStats(initialStats);
     }
-
+  
     fetchInitialStats();
     const intervalId = setInterval(async () => {
-      const updatedStats = await fetchStats();
+      const updatedStats = await fetchStats(selectedServerValue);
       setStats(updatedStats);
     }, 5000);
+  
+    // Add a cleanup function to clear the interval when the component is unmounted or the server is changed
     return () => clearInterval(intervalId);
-  }, []);
+  }, [selectedServerValue]);
 
   return (
     <div>
@@ -155,10 +127,10 @@ function Home() {
       <h1>Match Statistics</h1>
       <Row gutter={[16, 16]} >
         <Col xs={24} md={8}>
-          <Statistic title="Matches in Progress" value={stats.numMatchesInGame || '-'} />
+          <Statistic title="Matches in Progress" value={stats.numMatchesInGame || '0'} />
         </Col>
         <Col xs={24} md={8}>
-          <Statistic title="Players Online" value={stats.numPlayersInGame || '-'} />
+          <Statistic title="Players Online" value={stats.numPlayersInGame || '0'} />
         </Col>
       </Row>
       <br />

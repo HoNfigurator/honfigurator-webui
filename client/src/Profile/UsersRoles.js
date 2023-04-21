@@ -57,7 +57,13 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
         title: 'Permissions',
         dataIndex: 'permissions',
         key: 'permissions',
-        render: permissions => (permissions ? permissions.join(', ') : '')
+        render: permissions => {
+          const parsedPermissions = JSON.parse(permissions);
+          const truePermissions = Object.entries(parsedPermissions)
+            .filter(([key, value]) => value === true)
+            .map(([key, value]) => key);
+          return truePermissions.join(', ');
+        },
       },
       {
         title: 'Actions',
@@ -78,10 +84,9 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
       },
     ];
   
-    return (
-      <Table columns={columns} dataSource={roles} />
-    );
+    return <Table columns={columns} dataSource={roles} />;
   }
+  
 
   function UsersandRoles() {
     const [users, setUsers] = React.useState([]);
