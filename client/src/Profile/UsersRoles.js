@@ -1,6 +1,8 @@
-import React from 'react';
+// UsersRoles.js
+import React, { useState, useEffect, useContext } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Space, Popconfirm } from 'antd';
-import { axiosInstanceServer } from '../Security/axiosRequestFormat';
+import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
+import { SelectedServerContext } from '../App';
 
 const { Option } = Select;
 
@@ -98,6 +100,14 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
   
     const [userForm] = Form.useForm();
     const [roleForm] = Form.useForm();
+  
+    // Add this line to get the selected server from context
+    // const selectedServer = useContext(SelectedServerContext);
+    const { selectedServerValue } = useContext(SelectedServerContext);
+    console.log(`server context ${selectedServerValue}`)
+    
+    // Replace axiosInstanceServer with serverAxios using createAxiosInstanceServer
+    const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue);
  
     const handleUserOk = async () => {
       try {
@@ -120,11 +130,8 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
           setEditingUser(null);
         } else {
           console.log("adding user");
-          const response = await axiosInstanceServer.post('/users/add', payload, {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }).catch((error) => {
+          const response = await axiosInstanceServer.post('/users/add', payload)
+            .catch((error) => {
             console.log(error);
           });
           console.log("adding user");
@@ -157,11 +164,7 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
             setRoles(roles.map((role) => (role.name === editingRole.name ? response.data : role)));
             setEditingRole(null);
           } else {
-            const response = await axiosInstanceServer.post('/roles/add', payload, {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
+            const response = await axiosInstanceServer.post('/roles/add', payload);
       
             if (response.status === 201) {
               setRoles([...roles, response.data]);
@@ -171,21 +174,24 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
           }
           setRoleModalVisible(false);
           setRoleModalVisible(false);
-            roleForm.resetFields();
+          roleForm.resetFields();
         } catch (error) {
           console.log(error);
         }
       };
       
   
-      const handleCancel = () => {
+      const handleUserCancel = () => {
         setUserModalVisible(false);
-        setRoleModalVisible(false);
         setEditingUser(null);
-        setEditingRole(null);
         userForm.resetFields();
+      };
+    
+      const handleRoleCancel = () => {
+        setRoleModalVisible(false);
+        setEditingRole(null);
         roleForm.resetFields();
-    };
+      };
       
   
     const [editingUser, setEditingUser] = React.useState(null);
@@ -252,7 +258,7 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
       async function fetchData() {
         const usersResult = await axiosInstanceServer.get('/users/all');
         const rolesResult = await axiosInstanceServer.get('/roles/all');
-        const permissionsResult = await axiosInstanceServer('/permissions/all');
+        const permissionsResult = await axiosInstanceServer.get('/permissions/all');
         console.log('Users Result:', usersResult);
         console.log('Roles Result:', rolesResult);
         console.log('Permissions Result:', permissionsResult);
@@ -308,11 +314,10 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
             title={editingUser ? 'Edit User' : 'Add User'}
             visible={userModalVisible}
             onOk={handleUserOk}
-            onCancel={handleCancel}
+            onCancel={handleUserCancel}
             okText={editingUser ? 'Update' : 'Add'}
             cancelText="Cancel"
-            id="userForm" // set the same value as the form prop
-            >
+          >
             <Form form={userForm} layout="vertical">
                 <Form.Item
                 label="Nickname"
@@ -348,14 +353,13 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
                 </Form.Item>
             </Form>
             </Modal>
-          <Modal
-            title={editingRole ? 'Edit Role' : 'Add Role'}
-            visible={roleModalVisible}
-            onOk={handleRoleOk}
-            onCancel={handleCancel}
-            okText={editingRole ? 'Update' : 'Add'}
-            cancelText="Cancel"
-            id="roleForm" // set the same value as the form prop
+            <Modal
+              title={editingRole ? 'Edit Role' : 'Add Role'}
+              visible={roleModalVisible}
+              onOk={handleRoleOk}
+              onCancel={handleRoleCancel}
+              okText={editingRole ? 'Update' : 'Add'}
+              cancelText="Cancel"
             >
             <Form form={roleForm} layout="vertical">
               <Form.Item

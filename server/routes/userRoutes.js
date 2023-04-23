@@ -1,5 +1,4 @@
 // server/routes/userRoutes.js
-
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
@@ -10,6 +9,7 @@ const TokenManager = require('../helpers/tokenManager');
 const { oauth } = require('../controllers/userController');
 
 const router = express.Router();
+const net = require('net');
 
 // Authenticate a user with Discord OAUTH2
 router.get('/user/auth/discord/callback', userController.discordOAuth2);
@@ -20,7 +20,14 @@ router.get('/user/current', authMiddleware, discordAuthMiddleware, userControlle
 // Reauthenticate a user, against stored discord tokens
 router.get('/user/reauth', discordAuthMiddleware, userController.reauthenticateUser);
 
-//// ADD GAME SERVER API CALLS HERE
+// Get users managed server list
+router.get('/user/get_servers', authMiddleware, discordAuthMiddleware, userController.getManagedServers);
+
+// Add server to users managed server list
+router.post('/user/add_server', authMiddleware, discordAuthMiddleware, userController.addManagedServer);
+
+router.put('/user/update_server', authMiddleware, discordAuthMiddleware, userController.updateServer);
+router.delete('/user/delete_server', authMiddleware, discordAuthMiddleware, userController.deleteServer);
 
 // In your server's routes/userRoutes.js file
 router.post('/user/refresh', authMiddlewareAllowExpired, discordAuthMiddleware, async (req, res) => {
@@ -48,7 +55,29 @@ router.post('/user/refresh', authMiddlewareAllowExpired, discordAuthMiddleware, 
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+
+  router.post('/user/server_tcp_check', async (req, res) => {
+    const { address } = req.body;
   
+    const client = new net.Socket();
+    const timeout = 5000;
+    client.setTimeout(timeout);
+  
+    client.connect(5000, address, () => {
+      res.status(200).send({ status: 'success' });
+      client.destroy();
+    });
+  
+    client.on('timeout', () => {
+      res.status(200).send({ status: 'timeout' });
+      client.destroy();
+    });
+  
+    client.on('error', (error) => {
+      res.status(200).send({ status: 'error', error });
+      client.destroy();
+    });
+  });
 
 
   // check for valid but expired token

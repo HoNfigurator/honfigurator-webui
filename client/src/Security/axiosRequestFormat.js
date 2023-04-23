@@ -1,13 +1,12 @@
 // axiosRequestFormat.js
-
 import axios from 'axios';
+import { SelectedServerValueContext } from '../App';
 
 export const axiosInstanceTest = axios.create({
   baseURL: '/api',
 });
 
 export const createAxiosInstanceServer = (selectedServer) => {
-  console.log(selectedServer);
   return axios.create({
     baseURL: '/api',
     headers: {
@@ -26,13 +25,6 @@ export const axiosInstanceServer = axios.create({
       Authorization: `Bearer ${localStorage.getItem('sessionToken')}`,
     },
   });
-// export const axiosInstanceServer = axios.create({
-//     baseURL: '/api',
-//     headers: {
-//       'Content-Type': 'application/json',
-//       Authorization: `Bearer AfInA2tWLcdBM3r2tnBAgqCpM8ZPez`,
-//     },
-//   });
 
 export const axiosInstanceUI = axios.create({
     baseURL: '/api-ui',

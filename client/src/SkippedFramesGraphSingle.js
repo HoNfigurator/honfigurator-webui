@@ -7,7 +7,7 @@ function SkippedFramesGraph({ port }) {
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await axiosInstanceServer.get(`/get_skipped_frame_data?port=${port}`);
+      const response = await axiosInstanceServer.get(`/api/get_skipped_frame_data?port=${port}`);
       const sortedData = Object.entries(response.data)
         .map(([timestamp, value]) => ({
           timestamp: new Date(parseInt(timestamp) * 1000).getTime(),

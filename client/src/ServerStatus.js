@@ -1,5 +1,6 @@
+// ServerStatus.js
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Collapse, Button } from 'antd';
+import { Card, Row, Col, Collapse, Button, message } from 'antd';
 import StatusDetail from './StatusDetail';
 import { axiosInstanceServer } from './Security/axiosRequestFormat';
 
@@ -8,7 +9,7 @@ function ServerStates() {
   const [activeKey, setActiveKey] = useState(null);
 
   const fetchServerStates = async () => {
-    const response = await axiosInstanceServer.get('/get_instances_status');
+    const response = await axiosInstanceServer.get(`/get_instances_status?_t=${Date.now()}`);
     setServerStates(response.data);
   };
 
@@ -41,26 +42,32 @@ function ServerStates() {
   };
 
   const handleServerAction = async (port, action) => {
-    // Make axios call to appropriate endpoint based on the action
-    if (action === 'stop') {
-      await axiosInstanceServer.post('/stop_server', { port });
-    } else if (action === 'start') {
-      // Replace with your actual start server API endpoint
-      await axiosInstanceServer.post('/start_server', { port });
+    try {
+      // Make axios call to appropriate endpoint based on the action
+      if (action === 'stop') {
+        await axiosInstanceServer.post(`/stop_server/${port}?_t=${Date.now()}`);
+        message.success('Server schedule stopped successfully!');
+      } else if (action === 'start') {
+        // Replace with your actual start server API endpoint
+        await axiosInstanceServer.post(`/start_server/${port}?_t=${Date.now()}`);
+        message.success('Server started successfully!');
+      }
+
+      // Fetch updated server states after the action is performed
+      fetchServerStates();
+    } catch (error) {
+      message.error('An error occurred while performing the action. Please try again later.');
     }
-  
-    // Fetch updated server states after the action is performed
-    fetchServerStates();
   };
 
   const getButtonAction = (status) => {
     return status === 'Ready' || status === 'Occupied' || status === 'Queued' || status === 'Starting' ? 'stop' : 'start';
   };
-  
+
   const getButtonText = (status) => {
     return status === 'Ready' || status === 'Occupied' || status === 'Queued' || status === 'Starting' ? 'Stop Server' : 'Start Server';
   };
-  
+
   const getButtonColor = (status) => {
     return status === 'Ready' || status === 'Occupied' || status === 'Queued' || status === 'Starting' ? '#FF5252' : '#3f87ba';
   }
@@ -86,7 +93,27 @@ function ServerStates() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
           <Button onClick={expandAll} style={{ marginRight: '8px' }}>Expand all</Button>
-          <Button onClick={collapseAll}>Collapse all</Button>
+          <Button onClick={collapseAll} style={{ marginRight: '8px' }}>Collapse all</Button>
+        </div>
+        <div>
+        <Button
+            type="primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleServerAction("all", "start");
+            }}
+            style={{ marginRight: '8px', backgroundColor: getButtonColor("Unknown") }}
+          >Start all
+          </Button>
+          <Button
+            type="primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleServerAction("all", "stop");
+            }}
+            style={{ marginRight: '8px', backgroundColor: getButtonColor("Occupied") }}
+          >Schedule stop all
+          </Button>
         </div>
         <div style={{ display: 'flex' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>

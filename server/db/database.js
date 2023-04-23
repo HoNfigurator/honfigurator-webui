@@ -48,5 +48,22 @@ db.run(
   }
 );
 
+db.run(
+  `CREATE TABLE IF NOT EXISTS servers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+  )`,
+  (err) => {
+    if (err) {
+      console.error('Error initializing the "servers" table:', err);
+    } else {
+      console.log('Initialized the "servers" table');
+    }
+  }
+);
+
 
 module.exports = db;
