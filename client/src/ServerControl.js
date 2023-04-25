@@ -1,28 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Form, Input, Button, Table } from 'antd';
+import { Form, Input, Button, Table, Collapse, message } from 'antd';
+import './ServerControl.css';
+import { SelectedServerValueContext } from './App';
+import { useContext } from 'react';
 import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
 
+const { Panel } = Collapse;
+
 const ServerControl = () => {
-  const [globalConfig, setGlobalConfig] = useState({});
+  const [globalConfig, setGlobalConfig] = useState({ hon_data: {} });
   const [serverInstances, setServerInstances] = useState([]);
   const [newServer, setNewServer] = useState({ name: '', port: '' });
+  const selectedServerValue = useContext(SelectedServerValueContext);
+
+  // Add new state variables for total configured servers and total allowed servers
+  const [totalConfiguredServers, setTotalConfiguredServers] = useState(0);
+  const [totalAllowedServers, setTotalAllowedServers] = useState(0);
+
+  const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue);
 
   // fetch global config data from API endpoint
   useEffect(() => {
     const fetchGlobalConfig = async () => {
-      const response = await axios.get(`/api/get_global_config?_t=${Date.now()}`);
+      const response = await axiosInstanceServer.get(`/get_global_config?_t=${Date.now()}`);
+      console.log(response);
       setGlobalConfig(response.data);
     };
     fetchGlobalConfig();
   }, []);
 
+  const handleInputChange = (e, key) => {
+    setGlobalConfig({
+      ...globalConfig,
+      hon_data: { ...globalConfig.hon_data, [key]: e.target.value },
+    });
+  };
+
+  const honDataFormItems = Object.entries(globalConfig.hon_data).map(([key, value]) => (
+    <Form.Item key={key} label={key}>
+      <Input value={value || ''} onChange={(e) => handleInputChange(e, key)} />
+    </Form.Item>
+  ));
+
+
   // fetch server instances data from API endpoint
+  // fetch server instances data from API endpoint
+  const fetchServerInstances = async () => {
+    const responseInstances = await axiosInstanceServer.get(`/get_instances_status?_t=${Date.now()}`);
+    console.log('Raw Response Data:', responseInstances.data);
+    const transformedData = Object.entries(responseInstances.data).map(([key, value]) => {
+      return {
+        name: key,
+        ...value,
+      };
+    });
+    console.log('Server Instances Data:', transformedData);
+    setServerInstances(transformedData);
+
+    const responseConfigured = await axiosInstanceServer.get(`/get_server_config_item/svr_total`);
+    setTotalConfiguredServers(responseConfigured.data);
+    const responseAllowed = await axiosInstanceServer.get(`/get_total_allowed_servers`);
+    setTotalAllowedServers(responseAllowed.data.total_allowed_servers);
+  };
+
   useEffect(() => {
-    const fetchServerInstances = async () => {
-      const response = await axios.get(`/api/get_instances_status?_t=${Date.now()}`);
-      setServerInstances(response.data);
-    };
     fetchServerInstances();
   }, []);
 
@@ -32,7 +74,7 @@ const ServerControl = () => {
     // use axios to post new config values to API endpoint
     // and update state if successful
     try {
-      const response = await axios.post(`/api/save_config?_t=${Date.now()}`, globalConfig);
+      const response = await axiosInstanceServer.post(`/save_config?_t=${Date.now()}`, globalConfig);
       setGlobalConfig(response.data);
       console.log('Config saved successfully!');
     } catch (error) {
@@ -40,18 +82,54 @@ const ServerControl = () => {
     }
   };
 
-  // handle form submit for adding new server instance
-  const handleAddServer = async (e) => {
-    e.preventDefault();
-    // use axios to post new server instance data to API endpoint
-    // and update state if successful
+  const handleAddAllServers = async () => {
     try {
-      // replace example data with actual form input values
-      const newServer = { name: 'New Server', port: '12345' };
-      const response = await axios.post('/api/add_server', newServer);
-      setServerInstances([...serverInstances, response.data]);
-      console.log('Server added successfully!');
+      const response = await axiosInstanceServer.post('/add_all_servers');
+      if (response.status === 200) {
+        message.success('All servers added successfully!');
+        fetchServerInstances();
+      }
     } catch (error) {
+      message.error('Failed to add all servers.')
+      console.error(error);
+    }
+  };
+
+  const handleRemoveAllServers = async () => {
+    try {
+      const response = await axiosInstanceServer.post('/remove_all_servers');
+      if (response.status === 200) {
+        message.success('All servers removed successfully!');
+        fetchServerInstances();
+      }
+    } catch (error) {
+      message.error('Failed to remove all servers.')
+      console.error(error);
+    }
+  };
+
+  const handleAddServer = async () => {
+    try {
+      const response = await axiosInstanceServer.post('/add_servers/1');
+      if (response.status === 200) {
+        message.success('Server added successfully!');
+        fetchServerInstances(); // Call fetchServerInstances again
+      }
+    } catch (error) {
+      message.error('Failed to add a server.')
+      console.error(error);
+    }
+  };
+
+  const handleRemoveServer = async () => {
+    try {
+      const response = await axiosInstanceServer.post('/remove_servers/1');
+      if (response.status === 200) {
+        message.success('Server removed successfully!');
+        fetchServerInstances(); // Call fetchServerInstances again
+      }
+    } catch (error) {
+      message.error('Failed to remove a server.')
       console.error(error);
     }
   };
@@ -63,60 +141,86 @@ const ServerControl = () => {
       key: 'name',
     },
     {
-      title: 'Port',
-      dataIndex: 'port',
-      key: 'port',
+      title: 'ID',
+      dataIndex: 'ID',
+      key: 'ID',
     },
-    // Add any other columns as needed
+    {
+      title: 'Port',
+      dataIndex: 'Port',
+      key: 'Port',
+    },
+    // Add other columns as needed
   ];
 
   return (
     <div>
-      <h1>Global Config Settings</h1>
-      <form onSubmit={handleSaveConfig}>
-        <Form.Item label="HoN Data">
-          <Input
-            value={globalConfig.hon_data || ''}
-            onChange={(e) =>
-              setGlobalConfig({ ...globalConfig, hon_data: e.target.value })
-            }
-          />
-        </Form.Item>
-        {/* <Form.Item label="Config Key 2">
-          <Input
-            value={globalConfig.configKey2 || ''}
-            onChange={(e) =>
-              setGlobalConfig({ ...globalConfig, configKey2: e.target.value })
-            }
-          />
-        </Form.Item> */}
-        {/* Add more form inputs for other global config settings */}
-        <Button type="primary" htmlType="submit">
-          Save Config
-        </Button>
-      </form>
+      <h1>Global Config Settings - HoN Data</h1>
+      <Collapse>
+        <Panel header="HoN Data Configuration" key="1">
+          <form onSubmit={handleSaveConfig}>{honDataFormItems}</form>
+          <Button type="primary" htmlType="submit" onClick={handleSaveConfig}>
+            Save Config
+          </Button>
+        </Panel>
+      </Collapse>
       <h1>Server Management</h1>
-      <form onSubmit={handleAddServer}>
-        <Form.Item label="Name">
-          <Input
-            value={newServer.name}
-            onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
-          />
-        </Form.Item>
-        <Form.Item label="Port">
-          <Input
-            value={newServer.port}
-            onChange={(e) => setNewServer({ ...newServer, port: e.target.value })}
-          />
-        </Form.Item>
-        <Button type="primary" htmlType="submit">
-          Add Server
-        </Button>
-      </form>
       <Table
-        dataSource={serverInstances}
-        columns={columns}
-        rowKey={(record) => record.name + record.port} // Use a unique key for each row
+      dataSource={serverInstances}
+      columns={columns}
+      rowKey={(record) => (record ? record.name + record.Port : 'default')}
+      rowClassName={(record) => (record['Marked for Deletion'] === 'Yes' ? 'highlighted-row' : '')}
+        footer={() => (
+          <>
+            <div>
+              Configured Servers: {totalConfiguredServers} / {totalAllowedServers}
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <Button
+                type="primary"
+                onClick={() => {
+                  handleAddServer();
+                }}
+                disabled={totalConfiguredServers >= totalAllowedServers}
+                style={{ marginRight: '10px' }}
+              >
+                Add a server
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => {
+                  handleAddAllServers();
+                }}
+                disabled={totalConfiguredServers >= totalAllowedServers}
+              >
+                Add all servers
+              </Button>
+            </div>
+            <div>
+              <Button
+                type="primary"
+                onClick={() => {
+                  handleRemoveServer();
+                }}
+                disabled={totalConfiguredServers <= 0}
+                danger // Make button red
+                style={{ marginRight: '10px' }}
+              >
+                Remove a server
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => {
+                  handleRemoveAllServers();
+                }}
+                disabled={totalConfiguredServers <= 0}
+                danger // Make button red
+              >
+                Remove all servers
+              </Button>
+            </div>
+          </>
+        )}
       />
     </div>
   );

@@ -1,5 +1,4 @@
 // App.js
-
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Menu, Dropdown, Spin, Button, message } from 'antd';
@@ -17,9 +16,10 @@ import RequireAuth, { useAuthenticatedState } from './Security/RequireAuth';
 import useInactivityLogout from './Security/userInactivityLogout';
 import AddServerModal from './Forms/addServerModal';
 import { ServerListProvider, useServerList } from './Components/serverListContext';
-import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
-import { axiosInstanceUI } from './Security/axiosRequestFormat';
+
 import EditServerModal from './Forms/editServerModal';
+import { handleEditServer, handleRemoveServer, ServerNotConnected, getServerStatusIndicator } from './Components/serverMenuManagement';
+import handleLogout from './Utils/logout';
 
 const { Header, Content, Sider } = Layout;
 export const SelectedServerContext = createContext(null);
@@ -39,18 +39,28 @@ function App() {
 function AppContent() {
   const [selectedServer, setSelectedServer] = useState('');
   const [selectedServerValue, setSelectedServerValue] = useState('');
+  const [userSelected, setUserSelected] = useState(false); // Add this line
 
   const { serverOptions, serverStatusLoading, firstLoad, getServers } = useServerList();
+  const [isDropdownMenuOpen, setIsDropdownMenuOpen] = useState(false);
 
   useEffect(() => {
     if (serverOptions.length > 0) {
-      setSelectedServer(serverOptions[0].label);
-      setSelectedServerValue(serverOptions[0].value);
+      const previousSelectedServer = serverOptions.find((option) => option.value === selectedServerValue);
+
+      if (previousSelectedServer) {
+        setSelectedServer(previousSelectedServer.label);
+        setSelectedServerValue(previousSelectedServer.value);
+      } else {
+        setSelectedServer(serverOptions[0].label);
+        setSelectedServerValue(serverOptions[0].value);
+      }
     } else {
       setSelectedServer('');
       setSelectedServerValue('');
     }
   }, [serverOptions]);
+
   const [addServerModalVisible, setAddServerModalVisible] = useState(false);
   const [editServerModalVisible, setEditServerModalVisible] = useState(false);
   const [serverToEdit, setServerToEdit] = useState(null);
@@ -63,98 +73,23 @@ function AppContent() {
 
   const [stateMessage, setStateMessage] = useState(null);
 
-
-  const handleLogout = (navigate, message) => {
-    localStorage.removeItem('sessionToken');
-    localStorage.removeItem('tokenExpiry');
-    if (message) {
-      setStateMessage(message);
-    }
-    setAuthenticated(false);
-    navigate('/login');
-  };
-
-  useInactivityLogout(() => handleLogout(navigate, 'You have been logged out due to inactivity.'), 3600, authenticated, setStateMessage);
+  useInactivityLogout(() => handleLogout(navigate, 'You have been logged out due to inactivity.', setStateMessage, setAuthenticated), 3600, authenticated);
 
   const headerHeight = 64;
 
   const handleServerChange = (value) => {
+    console.log("IVE BEEN CLICKED")
     const selected = serverOptions.find((option) => option.value === value);
     if (selected) {
       setSelectedServer(selected.label);
       setSelectedServerValue(value);
+      setUserSelected(true); // Add this line
     }
   };
-
-  const getServerStatusIndicator = (status) => (
-    <div
-      style={{
-        display: "inline-block",
-        marginLeft: "5px",
-        width: "10px",
-        height: "10px",
-        borderRadius: "50%",
-        backgroundColor:
-          status === "OK" ? "green" : "red",
-      }}
-    />
-  );
-
-  function ServerNotConnected() {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100%",
-          fontSize: "1.5em",
-          fontWeight: "bold",
-          color: "red",
-        }}
-      >
-        Server is not connected
-      </div>
-    );
-  }
 
   const selectedServerStatus = serverOptions.find(
     (option) => option.value === selectedServerValue
   )?.status;
-
-  const statusIndicator = (
-    <div
-      style={{
-        display: "inline-block",
-        marginLeft: "5px",
-        width: "10px",
-        height: "10px",
-        borderRadius: "50%",
-        backgroundColor:
-          selectedServerStatus === "OK" ? "green" : "red",
-      }}
-    />
-  );
-
-  const handleEditServer = (server) => {
-    setServerToEdit(server);
-    setEditServerModalVisible(true);
-  };
-
-  const handleRemoveServer = async (server) => {
-    console.log("Remove server:", server);
-    const payload = {
-      name: server.label
-    }
-    try {
-      await axiosInstanceUI.delete('/user/delete_server', { data: payload });
-      getServers(); // Refresh the server list after deletion
-      message.success(`Server '${server.label}' deleted successfully.`);
-    } catch (error) {
-      console.error('Error deleting server:', error);
-      message.error(`Error deleting server '${server.label}'.`);
-    }
-  };
 
   const serverListMenu = (
     <Menu
@@ -162,10 +97,10 @@ function AppContent() {
         minWidth: '250px', // Increase the width of the dropdown list
       }}
     >
-      {serverOptions.map((option) => (
-        <Menu.Item key={option.value}>
+      {serverOptions.map((option, index) => (
+        <Menu.Item key={index}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div onClick={() => handleServerChange(option.value)}>
+            <div onClick={() => handleServerChange(option.value)} style={{ cursor: "pointer" }}>
               {getServerStatusIndicator(option.status)} {option.label}
             </div>
             <div>
@@ -173,8 +108,7 @@ function AppContent() {
                 size="small"
                 type="primary"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  handleEditServer(option);
+                  handleEditServer(e, option, setServerToEdit, setEditServerModalVisible);
                 }}
                 style={{
                   marginRight: '5px',
@@ -186,12 +120,12 @@ function AppContent() {
                 size="small"
                 danger
                 onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveServer(option);
+                  handleRemoveServer(e, option, getServers);
                 }}
               >
                 Remove
               </Button>
+
             </div>
           </div>
         </Menu.Item>
@@ -227,12 +161,17 @@ function AppContent() {
               <h1 style={{ fontSize: "2.5em", margin: 0 }}>HoNfigurator</h1>
             </div>
             {authenticated && (
-              <Dropdown overlay={serverListMenu} trigger={["click"]}>
+              <Dropdown
+                overlay={serverListMenu}
+                trigger={["click"]}
+                // Add this line
+                onVisibleChange={(visible) => setIsDropdownMenuOpen(visible)}
+              >
                 <a className="ant-dropdown-link" onClick={(e) => e.preventDefault()}>
                   {selectedServer
                     ? `Connected to: ${selectedServer}`
                     : "No connected servers."}
-                  {statusIndicator} <DownOutlined />
+                  {getServerStatusIndicator(selectedServerStatus)} <DownOutlined />
                 </a>
               </Dropdown>
             )}
@@ -261,11 +200,7 @@ function AppContent() {
                   <Menu.Item key="4">
                     <Link to="/roles">Users & Roles</Link>
                   </Menu.Item>
-                  <Menu.Item
-                    key="5"
-                    style={{ marginTop: "auto" }}
-                    onClick={() => handleLogout(navigate, "You have manually logged out.")}
-                  >
+                  <Menu.Item key="5" style={{ marginTop: "auto" }} onClick={() => handleLogout(navigate, "You have manually logged out.", setStateMessage, setAuthenticated)}>
                     Logout
                   </Menu.Item>
                 </Menu>

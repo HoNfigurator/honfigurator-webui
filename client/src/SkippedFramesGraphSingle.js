@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { axiosInstanceServer } from './Security/axiosRequestFormat';
+import { createAxiosInstanceServer, axiosInstanceServer } from './Security/axiosRequestFormat';
 
-function SkippedFramesGraph({ port }) {
+function SkippedFramesGraph({ port, address }) {
   const [data, setData] = useState([]);
+  // const axiosInstanceServer = createAxiosInstanceServer(address);
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await axiosInstanceServer.get(`/api/get_skipped_frame_data?port=${port}`);
+      const response = await axiosInstanceServer.get(`/api/get_skipped_frame_data/${port}?_t=${Date.now()}`);
       const sortedData = Object.entries(response.data)
         .map(([timestamp, value]) => ({
           timestamp: new Date(parseInt(timestamp) * 1000).getTime(),

@@ -44,7 +44,7 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
     ];
   
     return (
-      <Table columns={columns} dataSource={users} />
+      <Table columns={columns} dataSource={users.map(user => ({ ...user, key: user.discord_id }))} />
     );
   }
   
@@ -85,8 +85,9 @@ function UserTable({ users, handleEditUser, handleDeleteUser }) {
         ),
       },
     ];
-  
-    return <Table columns={columns} dataSource={roles} />;
+    return (
+      <Table columns={columns} dataSource={roles.map(role => ({ ...role, key: role.name }))} />
+    );
   }
   
 

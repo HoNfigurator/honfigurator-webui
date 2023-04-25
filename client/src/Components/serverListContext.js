@@ -54,7 +54,7 @@ export const ServerListProvider = ({ children }) => {
 
     const intervalId = setInterval(() => {
       getServers();
-    }, 10000);
+    }, 60000);
 
     return () => clearInterval(intervalId);
   }, []);

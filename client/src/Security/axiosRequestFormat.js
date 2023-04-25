@@ -7,6 +7,7 @@ export const axiosInstanceTest = axios.create({
 });
 
 export const createAxiosInstanceServer = (selectedServer) => {
+  console.log(`Selected server is: ${selectedServer}`);
   return axios.create({
     baseURL: '/api',
     headers: {

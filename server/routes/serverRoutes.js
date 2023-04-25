@@ -178,7 +178,7 @@ router.get('/get_memory_total', addAccessToken, createProxyHandler('/api/get_mem
 router.get('/get_num_players_ingame', addAccessToken, createProxyHandler('/api/get_num_players_ingame', 'get'));
 router.get('/get_num_matches_ingame', addAccessToken, createProxyHandler('/api/get_num_matches_ingame', 'get'));
 router.get('/get_instances_status', addAccessToken, createProxyHandler('/api/get_instances_status', 'get'));
-router.get('/get_global_config'), addAccessToken, createProxyHandler('/api/get_global_config','get');
+router.get('/get_global_config', addAccessToken, createProxyHandler('/api/get_global_config','get'));
 router.get('/get_skipped_frame_data/:port', addAccessToken, createProxyHandlerWithParams('/api/get_skipped_frame_data/:port', 'get'));
 // router.get('/get_skipped_frame_data/:port', addAccessToken, async (req, res) => {
 //     const { port } = req.query;
@@ -191,6 +191,10 @@ router.get('/get_skipped_frame_data/:port', addAccessToken, createProxyHandlerWi
 */
 router.post('/stop_server/:port', addAccessToken, createProxyHandlerWithParams('/api/stop_server/:port', 'post'));
 router.post('/start_server/:port', addAccessToken, createProxyHandlerWithParams('/api/start_server/:port', 'post'));
+router.post('/add_servers/:num', addAccessToken, createProxyHandlerWithParams('/api/add_servers/:num', 'post'));
+router.post('/remove_servers/:num', addAccessToken, createProxyHandlerWithParams('/api/remove_servers/:num', 'post'));
+router.post('/add_all_servers', addAccessToken, createProxyHandlerWithParams('/api/add_all_servers', 'post'));
+router.post('/remove_all_servers', addAccessToken, createProxyHandlerWithParams('/api/remove_all_servers', 'post'));
 router.get('/ping', createProxyHandler('/api/ping', 'get'));
 
 module.exports = router;

@@ -5,7 +5,6 @@ import SkippedFramesGraphAll from './SkippedFramesGraphAll';
 import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
 import { SelectedServerContext } from './App';
 
-
 async function fetchStats(selectedServer) {
   try {
     const axiosInstanceServer = createAxiosInstanceServer(selectedServer);
