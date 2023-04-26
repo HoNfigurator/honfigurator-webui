@@ -37,6 +37,11 @@
   }
 }
 
+.ant-dropdown-link {
+  font-size: 18px;
+  padding: 16px;
+}
+
 .content {
   min-height: calc(100vh - 64px); /* 64px is the height of the header */
 }

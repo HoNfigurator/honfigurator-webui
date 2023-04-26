@@ -1,12 +1,15 @@
 // ServerStatus.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Card, Row, Col, Collapse, Button, message } from 'antd';
 import StatusDetail from './StatusDetail';
-import { axiosInstanceServer } from './Security/axiosRequestFormat';
+import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
+import { SelectedServerValueContext } from './App';
 
 function ServerStates() {
   const [serverStates, setServerStates] = useState([]);
   const [activeKey, setActiveKey] = useState(null);
+  const selectedServerValue = useContext(SelectedServerValueContext);
+  const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue);
 
   const fetchServerStates = async () => {
     const response = await axiosInstanceServer.get(`/get_instances_status?_t=${Date.now()}`);
@@ -94,8 +97,6 @@ function ServerStates() {
         <div>
           <Button onClick={expandAll} style={{ marginRight: '8px' }}>Expand all</Button>
           <Button onClick={collapseAll} style={{ marginRight: '8px' }}>Collapse all</Button>
-        </div>
-        <div>
         <Button
             type="primary"
             onClick={(e) => {

@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3001;
 app.use(bodyParser.json());
 
 app.use('/api-ui', userRoutes);
+app.use(express.json()); // Add this line
 app.use('/api', serverRoutes);
 
 app.listen(PORT, () => {

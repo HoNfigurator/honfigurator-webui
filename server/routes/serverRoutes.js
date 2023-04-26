@@ -79,7 +79,7 @@ const createProxyHandler = (path, method) => {
                     'selected-server': req.headers['selected-server'], // Add this line
                     Authorization: req.headers.authorization,
                 },
-                data: req.body,
+                data: req.body, // Add this line
                 httpsAgent: agent,
             });
             res.status(response.status).json(response.data);
@@ -164,10 +164,6 @@ router.delete('/roles/delete/:role_name', addAccessToken, createProxyHandlerWith
     Server getters
 */
 router.get('/get_server_config_item/:key', addAccessToken, createProxyHandlerWithParams('/api/get_server_config_item/:key', 'get'));
-// router.get('/get_server_config_item', addAccessToken, async (req, res) => {
-//     const { key } = req.query;
-//     createProxyHandlerWithParams(`/api/get_server_config_item?key=${key}`, 'get')(req, res);
-// });
 router.get('/get_total_allowed_servers', addAccessToken, createProxyHandler('/api/get_total_allowed_servers', 'get'));
 router.get('/get_total_servers', addAccessToken, createProxyHandler('/api/get_total_servers', 'get'));
 router.get('/get_total_cpus', addAccessToken, createProxyHandler('/api/get_total_cpus', 'get'));
@@ -180,11 +176,10 @@ router.get('/get_num_matches_ingame', addAccessToken, createProxyHandler('/api/g
 router.get('/get_instances_status', addAccessToken, createProxyHandler('/api/get_instances_status', 'get'));
 router.get('/get_global_config', addAccessToken, createProxyHandler('/api/get_global_config','get'));
 router.get('/get_skipped_frame_data/:port', addAccessToken, createProxyHandlerWithParams('/api/get_skipped_frame_data/:port', 'get'));
-// router.get('/get_skipped_frame_data/:port', addAccessToken, async (req, res) => {
-//     const { port } = req.query;
-//     createProxyHandlerWithParams(`/api/get_skipped_frame_data/:port=${port}`, 'get')(req, res);
-// });
-
+/*
+    Server setters
+*/
+router.post('/set_hon_data', addAccessToken, createProxyHandler('/api/set_hon_data', 'post'))
 
 /*
     Server control

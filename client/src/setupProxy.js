@@ -7,23 +7,12 @@ const agent = new https.Agent({
   rejectUnauthorized: true
 });
 
-module.exports = function (app, selectedServer) {
+module.exports = function (app) {
   app.use(
     '/api',
     createProxyMiddleware({
       target: 'http://localhost:3001',
       changeOrigin: true,
-      onProxyReq: (proxyReq, req, res) => {
-        // Modify the request body to include the selected server
-        const requestBody = JSON.stringify({
-          ...JSON.parse(req.body || '{}'),
-          server: selectedServer,
-        });
-        proxyReq.setHeader('Content-Type', 'application/json');
-        proxyReq.setHeader('Content-Length', Buffer.byteLength(requestBody));
-        proxyReq.write(requestBody);
-        proxyReq.end();
-      },
     })
   );
 

@@ -92,49 +92,51 @@ function AppContent() {
   )?.status;
 
   const serverListMenu = (
-    <Menu
-      style={{
-        minWidth: '250px', // Increase the width of the dropdown list
-      }}
-    >
-      {serverOptions.map((option, index) => (
-        <Menu.Item key={index}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div onClick={() => handleServerChange(option.value)} style={{ cursor: "pointer" }}>
-              {getServerStatusIndicator(option.status)} {option.label}
-            </div>
-            <div>
-              <Button
-                size="small"
-                type="primary"
-                onClick={(e) => {
-                  handleEditServer(e, option, setServerToEdit, setEditServerModalVisible);
-                }}
-                style={{
-                  marginRight: '5px',
-                }}
-              >
-                Edit
-              </Button>
-              <Button
-                size="small"
-                danger
-                onClick={(e) => {
-                  handleRemoveServer(e, option, getServers);
-                }}
-              >
-                Remove
-              </Button>
-
-            </div>
+  <Menu
+    style={{
+      minWidth: '300px', // Increase the width of the dropdown list
+    }}
+  >
+    {serverOptions.map((option, index) => (
+      <Menu.Item key={index}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div onClick={() => handleServerChange(option.value)} style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
+            {getServerStatusIndicator(option.status)} <strong>{option.label}</strong> {/* Make server name bold */}
           </div>
-        </Menu.Item>
-      ))}
-      <Menu.Item key="add_server" onClick={() => setAddServerModalVisible(true)}>
-        Add Server
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <small style={{ color: "gray", marginRight: "10px" }}>{option.value}</small> {/* Show server address preview */}
+            <Button
+              size="small"
+              type="primary"
+              onClick={(e) => {
+                handleEditServer(e, option, setServerToEdit, setEditServerModalVisible);
+              }}
+              style={{
+                marginRight: '5px',
+              }}
+            >
+              Edit
+            </Button>
+            <Button
+              size="small"
+              danger
+              onClick={(e) => {
+                handleRemoveServer(e, option, getServers);
+              }}
+            >
+              Remove
+            </Button>
+          </div>
+        </div>
       </Menu.Item>
-    </Menu>
-  );
+    ))}
+    <Menu.Item key="add_server" onClick={() => setAddServerModalVisible(true)}>
+      Add Server
+    </Menu.Item>
+  </Menu>
+);
+
+
 
   const showAddServerButton = authenticated && serverOptions.length === 0;
 
