@@ -1,7 +1,6 @@
 const express = require('express');
 const axios = require('axios');
 const session = require('../db/session');
-const { jwtSecret } = require('../config');
 const jwt = require('jsonwebtoken');
 const https = require('https');
 const fs = require('fs');
@@ -41,7 +40,7 @@ const addAccessToken = async (req, res, next) => {
         const authHeader = req.headers.authorization;
         const token = authHeader.split(' ')[1];
         // console.log(`addAccessToken:\n\ttoken: ${token}`)
-        const decodedToken = jwt.verify(token, jwtSecret);
+        const decodedToken = jwt.verify(token, process.env.jwtSecret);
         const userId = decodedToken.user_id;
 
         // console.log(`addAccessToken:\n\tDiscord ID: ${userId}`);
@@ -140,10 +139,6 @@ const createProxyHandlerWithParams = (path, method) => {
     };
 };
 
-
-
-
-
 /*
     Role getters
 */
@@ -151,6 +146,7 @@ router.get('/permissions/all', addAccessToken, createProxyHandler('/api/permissi
 router.get('/users/all', addAccessToken, createProxyHandler('/api/users/all', 'get'));
 router.get('/users/default', addAccessToken, createProxyHandler('/api/users/default', 'get'));
 router.post('/users/add', addAccessToken, createProxyHandler('/api/users/add', 'post'));
+router.post('/users/edit', addAccessToken, createProxyHandler('/api/users/edit', 'post'));
 router.delete('/users/delete/:discord_id', addAccessToken, createProxyHandlerWithParams('/api/users/delete/:discord_id', 'delete'));
 
 /*
@@ -159,6 +155,7 @@ router.delete('/users/delete/:discord_id', addAccessToken, createProxyHandlerWit
 router.get('/roles/all', addAccessToken, createProxyHandler('/api/roles/all', 'get'));
 router.get('/roles/default', addAccessToken, createProxyHandler('/api/roles/default', 'get'));
 router.post('/roles/add', addAccessToken, createProxyHandler('/api/roles/add', 'post'));
+router.post('/roles/edit', addAccessToken, createProxyHandler('/api/roles/edit', 'post'));
 router.delete('/roles/delete/:role_name', addAccessToken, createProxyHandlerWithParams('/api/roles/delete/:role_name', 'delete'));
 
 

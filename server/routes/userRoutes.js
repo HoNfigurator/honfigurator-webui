@@ -2,7 +2,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
-const { jwtSecret, SESSION_TIMEOUT } = require('../config');
 
 const userController = require('../controllers/userController');
 const TokenManager = require('../helpers/tokenManager');
@@ -54,7 +53,7 @@ router.post('/user/refresh', authMiddlewareAllowExpired, discordAuthMiddleware, 
       }
   
       // Generate a new session token
-      const newSessionToken = jwt.sign({ user_id: req.user.user_id }, jwtSecret, { expiresIn: SESSION_TIMEOUT });
+      const newSessionToken = jwt.sign({ user_id: req.user.user_id }, process.env.jwtSecret, { expiresIn: process.env.SESSION_TIMEOUT });
 
       // Calculate the token expiration time
       const tokenExpiration = new Date(jwt.decode(newSessionToken).exp * 1000).toISOString();
@@ -110,7 +109,7 @@ async function authMiddlewareAllowExpired(req, res, next) {
     }
   
     try {
-      const decoded = jwt.verify(token, jwtSecret, { algorithms: ['HS256'], ignoreExpiration: true });
+      const decoded = jwt.verify(token, process.env.jwtSecret, { algorithms: ['HS256'], ignoreExpiration: true });
   
       // Check if the token has expired
       const isExpired = (Date.now() / 1000 - decoded.iat) > decoded.exp;
@@ -148,7 +147,7 @@ async function authMiddleware(req, res, next) {
     }
 
     try {
-        const decoded = await jwt.verify(token, jwtSecret, { algorithms: ['HS256'] });
+        const decoded = await jwt.verify(token, process.env.jwtSecret, { algorithms: ['HS256'] });
 
         req.user = { user_id: decoded.user_id };
         next();

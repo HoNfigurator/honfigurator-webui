@@ -5,7 +5,6 @@ const DiscordOAuth2 = require('discord-oauth2');
 const oauth = new DiscordOAuth2();
 
 const { createUser, getUserDataFromDatabase, updateAccessToken, checkForExistingServer, getUserServersFromDatabase, createServerForUser, updateServerForUser, deleteServerForUser } = require('../db/session'); // Import the functions
-const { jwtSecret, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI, SESSION_TIMEOUT } = require('../config');
 const TokenManager = require('../helpers/tokenManager');
 
 // server/controllers/userController.js
@@ -26,7 +25,7 @@ async function reauthenticateUser(req, res) {
     }
 
     // Verify and decode the token to get the user_id (discord_id)
-    const decoded = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] });
+    const decoded = jwt.verify(token, process.env.jwtSecret, { algorithms: ['HS256'] });
     const user_id = decoded.user_id;
 
     console.log(user_id);
@@ -49,7 +48,7 @@ async function reauthenticateUser(req, res) {
     }
 
     // Generate a new session token for the user
-    const sessionToken = jwt.sign({ user_id: userData.user_id }, jwtSecret, { expiresIn: SESSION_TIMEOUT });
+    const sessionToken = jwt.sign({ user_id: userData.user_id }, process.env.jwtSecret, { expiresIn: process.env.SESSION_TIMEOUT });
 
     // Calculate the token expiration time
     const tokenExpiration = new Date(Date.now() + jwt.decode(sessionToken).exp * 1000).toISOString();
@@ -67,12 +66,12 @@ async function discordOAuth2(req, res) {
   const { code } = req.query;
   try {
     const tokenResponse = await oauth.tokenRequest({
-      clientId: DISCORD_CLIENT_ID,
-      clientSecret: DISCORD_CLIENT_SECRET,
+      clientId: process.env.DISCORD_CLIENT_ID,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET,
       grantType: 'authorization_code',
       code,
       scope: 'identify',
-      redirectUri: DISCORD_REDIRECT_URI,
+      redirectUri: process.env.DISCORD_REDIRECT_URI,
     });
 
     const { access_token: accessToken, refresh_token: refreshToken, expires_in: expiresIn } = tokenResponse;
@@ -87,7 +86,7 @@ async function discordOAuth2(req, res) {
     const userData = userResponse;
 
     // Generate a session token (e.g., a JSON Web Token or JWT)
-    const sessionToken = jwt.sign({ user_id: userData.id }, jwtSecret, { expiresIn: SESSION_TIMEOUT });
+    const sessionToken = jwt.sign({ user_id: userData.id }, process.env.jwtSecret, { expiresIn: process.env.SESSION_TIMEOUT });
 
     const tokenExpiration = new Date(jwt.decode(sessionToken).exp * 1000).toISOString();
     console.log(`new expiration: ${tokenExpiration}`);
@@ -96,7 +95,7 @@ async function discordOAuth2(req, res) {
     const session = await createUser(userData, accessToken, refreshToken, expiresAt);
 
     // Redirect the user back to your frontend, sending the session token as a query parameter
-    res.redirect(`http://localhost:3000?sessionToken=${sessionToken}&tokenExpiry=${tokenExpiration}`); // Replace with the appropriate frontend route
+    res.redirect(`${process.env.BASE_URL}?sessionToken=${sessionToken}&tokenExpiry=${tokenExpiration}`); // Replace with the appropriate frontend route
   } catch (error) {
     console.error('Error during Discord OAuth2:', error);
     res.status(500).json({ error: 'Internal server error occured while performing discord account verification.' });

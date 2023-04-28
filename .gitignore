@@ -6,9 +6,11 @@
 /server/node_modules
 /server/config.js
 /server/db/users.db
-.env
+*.pem
+*.key
 /.pnp
 .pnp.js
+package-lock.json
 
 # testing
 /coverage
@@ -19,6 +21,9 @@
 /server/build
 
 # misc
+.env
+.env.production
+.env.development
 .DS_Store
 .env.local
 .env.development.local

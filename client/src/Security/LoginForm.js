@@ -15,9 +15,9 @@ const LoginForm = ({ stateMessage }) => {
   const { setAuthenticated } = useAuthenticatedState(token, location);
 
   const LoginWithDiscordButton = () => {
-    const clientId = '1096750568388702228';
-    const redirectUri = encodeURIComponent('http://localhost:3001/api-ui/user/auth/discord/callback');
-    const scope = encodeURIComponent('identify email');
+    const clientId = process.env.REACT_APP_DISCORD_CLIENT_ID;
+    const redirectUri = encodeURIComponent(process.env.REACT_APP_DISCORD_CALLBACK_URI);
+    const scope = encodeURIComponent(process.env.REACT_APP_DISCORD_SCOPE);
     const sessionToken = localStorage.getItem('sessionToken');
 
     const handleClick = (event) => {

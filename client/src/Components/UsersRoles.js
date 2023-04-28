@@ -182,7 +182,7 @@ function UsersandRoles() {
       };
 
       if (editingRole) {
-        const response = await axiosInstanceServer.post("/roles/add", payload);
+        const response = await axiosInstanceServer.post("/roles/edit", payload);
         if (response.status === 201 || response.status === 200) {
           setRoles(roles.map((role) => (role.name === editingRole.name ? response.data : role)));
           setEditingRole(null);
@@ -191,18 +191,20 @@ function UsersandRoles() {
           message.error(`Error editing role. [${error.response.status}] ${error.response.data}`)
         }
       } else {
-        const response = await axiosInstanceServer.post('/roles/add', payload);
-
-        if (response.status === 201) {
-          setRoles([...roles, response.data]);
-          message.success("Added role successfully.")
-        } else {
-          message.error(`Error adding role. [${error.response.status}] ${error.response.data}`)
+        try {
+          const response = await axiosInstanceServer.post('/roles/add', payload);
+          if (response.status === 201 || response.status === 200) {
+            setRoles([...roles, response.data]);
+            message.success("Added role successfully.")
+            setRoleModalVisible(false);
+            roleForm.resetFields();
+          } else {
+            message.error(`Error adding role. [${response.status}] ${response.data}`);
+          }
+        } catch (error) {
+          message.error(`Error adding role. [${error.response.status}] ${error.response.data}`);
         }
       }
-      setRoleModalVisible(false);
-      setRoleModalVisible(false);
-      roleForm.resetFields();
     } catch (error) {
       console.log(error);
     }
@@ -319,7 +321,7 @@ function UsersandRoles() {
         <span>
           Only numbers are allowed for Discord ID.{' '}
           <a
-            href="https://www.businessinsider.com/guides/tech/discord-id#:~:text=To%20find%20a%20user's%20Discord,sidebar%20and%20select%20Copy%20ID."
+            href={process.env.REACT_APP_DISCORD_OWNER_ID_URL}
             target="_blank"
             rel="noopener noreferrer"
           >

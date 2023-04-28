@@ -2,8 +2,6 @@
 const { Mutex } = require('async-mutex');
 const jwt = require('jsonwebtoken');
 
-const { jwtSecret, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET } = require('../config');
-
 class TokenManager {
     constructor(oauth, user_id, getUserDataFromDatabase, updateAccessToken) {
       this.mutex = new Mutex();
@@ -41,11 +39,11 @@ class TokenManager {
       }
     
       const refreshToken = userData.refresh_token;
-      console.log(`${DISCORD_CLIENT_ID}\n${DISCORD_CLIENT_SECRET}\n${refreshToken}`)
+      console.log(`${process.env.DISCORD_CLIENT_ID}\n${process.env.DISCORD_CLIENT_SECRET}\n${refreshToken}`)
 
         const newTokenResponse = await this.oauth.tokenRequest({
-          clientId: DISCORD_CLIENT_ID,
-          clientSecret: DISCORD_CLIENT_SECRET,
+          clientId: process.env.DISCORD_CLIENT_ID,
+          clientSecret: process.env.DISCORD_CLIENT_SECRET,
           grantType: 'refresh_token',
           refreshToken,
         });
@@ -66,7 +64,7 @@ class TokenManager {
 
   isTokenExpired(token) {
     try {
-      jwt.verify(token, jwtSecret, { algorithms: ['HS256'] });
+      jwt.verify(token, process.env.jwtSecret, { algorithms: ['HS256'] });
       return false;
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
