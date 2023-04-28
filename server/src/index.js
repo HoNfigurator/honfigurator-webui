@@ -13,6 +13,14 @@ console.log(envFilePath);
 
 console.log(process.env.DISCORD_CLIENT_ID);
 
+const app = express();
+const PORT = process.env.PORT || 3001;
+app.use(bodyParser.json());
+app.use('/api-ui', userRoutes);
+app.use(express.json()); // Add this line
+app.use('/api', serverRoutes);
+
+
 if (process.env.NODE_ENV === "production") {
   const privateKey = fs.readFileSync(process.env.CERTIFICATE_KEY, 'utf8');
   const certificate = fs.readFileSync(process.env.CERTIFICATE_FILE, 'utf8');
@@ -22,16 +30,6 @@ if (process.env.NODE_ENV === "production") {
     cert: certificate,
     ca: ca
   };
-}
-
-const app = express();
-const PORT = process.env.PORT || 3001;
-app.use(bodyParser.json());
-app.use('/api-ui', userRoutes);
-app.use(express.json()); // Add this line
-app.use('/api', serverRoutes);
-
-if (process.env.NODE_ENV === "production") {
   const httpsServer = https.createServer(credentials, app);
   httpsServer.listen(PORT, () => {
     console.log(`HTTPS server is running on port ${PORT}`);
@@ -39,5 +37,5 @@ if (process.env.NODE_ENV === "production") {
 } else {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-  });
-}
+  })
+};
