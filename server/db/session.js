@@ -105,7 +105,7 @@ async function createServerForUser(user_id, name, address) {
 
 async function checkForExistingServer(user_id, name, address) {
   return new Promise((resolve, reject) => {
-    db.all('SELECT * FROM servers WHERE name = ? or address = ?', [name, address], (err, rows) => {
+    db.all('SELECT * FROM servers WHERE (name = ? or address = ?) and discord_id = ?', [name, address, user_id], (err, rows) => {
       if (err) {
         return reject(new CustomError(500, `Error checking for existing server: ${err.message}`));
       }
