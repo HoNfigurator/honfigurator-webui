@@ -4,11 +4,11 @@ import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate 
 import { Layout, Menu, Dropdown, Spin, Button, message } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import HoNfiguratorIcon from './images/HonFigurator_Icon.png';
-import UsersandRoles from './Profile/UsersRoles';
+import UsersandRoles from './Components/UsersRoles';
 import './App.css';
 import Home from './Home';
-import ServerStatus from './ServerStatus';
-import ServerControl from './ServerControl';
+import ServerStatus from './Components/ServerStatus';
+import ServerControl from './Components/ServerControl';
 import RegisterForm from './Security/RegisterForm';
 import LoginForm from './Security/LoginForm';
 import DiscordCallback from './Security/Discord';
@@ -19,7 +19,7 @@ import { ServerListProvider, useServerList } from './Components/serverListContex
 
 import EditServerModal from './Forms/editServerModal';
 import { handleEditServer, handleRemoveServer, ServerNotConnected, getServerStatusIndicator } from './Components/serverMenuManagement';
-import handleLogout from './Utils/logout';
+import handleLogout from './Security/logout';
 
 const { Header, Content, Sider } = Layout;
 export const SelectedServerContext = createContext(null);

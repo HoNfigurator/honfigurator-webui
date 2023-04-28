@@ -1,6 +1,6 @@
 // StatusDetail.js
 import React from 'react';
-import SkippedFramesGraph from './SkippedFramesGraphSingle';
+import SkippedFramesGraph from '../Visualisations/SkippedFramesGraphSingle';
 import { Tag } from 'antd';
 
 function StatusDetail({ data, label, nestedKeys, port }) {

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Table, Collapse, message, Select, Checkbox, InputNumber, Tooltip } from 'antd';
 import './ServerControl.css';
-import { SelectedServerValueContext } from './App';
+import { SelectedServerValueContext } from '../App';
 import { useContext } from 'react';
-import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
+import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
 
 const { Panel } = Collapse;
 

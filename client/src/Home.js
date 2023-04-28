@@ -1,7 +1,7 @@
 // Home.js
 import React, { useState, useEffect, useContext } from 'react';
 import { Statistic, Row, Col, Progress } from 'antd';
-import SkippedFramesGraphAll from './SkippedFramesGraphAll';
+import SkippedFramesGraphAll from './Visualisations/SkippedFramesGraphAll';
 import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
 import { SelectedServerContext } from './App';
 

@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Card, Row, Col, Collapse, Button, message } from 'antd';
 import StatusDetail from './StatusDetail';
-import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
-import { SelectedServerValueContext } from './App';
+import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
+import { SelectedServerValueContext } from '../App';
 import './ServerStatus.css';
 
 function ServerStates() {
