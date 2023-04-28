@@ -14,9 +14,9 @@ console.log(envFilePath);
 console.log(process.env.DISCORD_CLIENT_ID);
 
 if (process.env.NODE_ENV === "production") {
-  const privateKey = fs.readFileSync('privkey.pem', 'utf8');
-  const certificate = fs.readFileSync('cert.pem', 'utf8');
-  const ca = fs.readFileSync('fullchain.pem', 'utf8');
+  const privateKey = fs.readFileSync(process.env.CERTIFICATE_KEY, 'utf8');
+  const certificate = fs.readFileSync(process.env.CERTIFICATE_FILE, 'utf8');
+  const ca = fs.readFileSync(process.env.CERTIFICATE_CHAIN, 'utf8');
   const credentials = {
     key: privateKey,
     cert: certificate,
