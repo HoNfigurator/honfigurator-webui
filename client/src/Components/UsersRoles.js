@@ -28,7 +28,7 @@ function UserTable({ users, defaultUsers, handleEditUser, handleDeleteUser }) {
       title: 'Actions',
       key: 'actions',
       render: (text, record) => {
-        const isDisabled = defaultUsers.some(user => user.name === record.name);
+        const isDisabled = defaultUsers.some(user => user.nickname === record.nickname);
         const tooltipTitle = isDisabled ? "Default users cannot be modified." : "Delete user";
         return (
           <Space>
