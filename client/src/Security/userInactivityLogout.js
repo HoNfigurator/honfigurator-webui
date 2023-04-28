@@ -1,5 +1,4 @@
 // security/userInactivityLogout.js
-
 import { useEffect, useState, useRef } from 'react';
 
 const events = [

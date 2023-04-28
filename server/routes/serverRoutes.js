@@ -149,6 +149,7 @@ const createProxyHandlerWithParams = (path, method) => {
 */
 router.get('/permissions/all', addAccessToken, createProxyHandler('/api/permissions/all', 'get'));
 router.get('/users/all', addAccessToken, createProxyHandler('/api/users/all', 'get'));
+router.get('/users/default', addAccessToken, createProxyHandler('/api/users/default', 'get'));
 router.post('/users/add', addAccessToken, createProxyHandler('/api/users/add', 'post'));
 router.delete('/users/delete/:discord_id', addAccessToken, createProxyHandlerWithParams('/api/users/delete/:discord_id', 'delete'));
 
@@ -156,6 +157,7 @@ router.delete('/users/delete/:discord_id', addAccessToken, createProxyHandlerWit
     Role setters
 */
 router.get('/roles/all', addAccessToken, createProxyHandler('/api/roles/all', 'get'));
+router.get('/roles/default', addAccessToken, createProxyHandler('/api/roles/default', 'get'));
 router.post('/roles/add', addAccessToken, createProxyHandler('/api/roles/add', 'post'));
 router.delete('/roles/delete/:role_name', addAccessToken, createProxyHandlerWithParams('/api/roles/delete/:role_name', 'delete'));
 
@@ -190,6 +192,6 @@ router.post('/add_servers/:num', addAccessToken, createProxyHandlerWithParams('/
 router.post('/remove_servers/:num', addAccessToken, createProxyHandlerWithParams('/api/remove_servers/:num', 'post'));
 router.post('/add_all_servers', addAccessToken, createProxyHandlerWithParams('/api/add_all_servers', 'post'));
 router.post('/remove_all_servers', addAccessToken, createProxyHandlerWithParams('/api/remove_all_servers', 'post'));
-router.get('/ping', createProxyHandler('/api/ping', 'get'));
+router.get('/ping', addAccessToken, createProxyHandler('/api/ping', 'get'));
 
 module.exports = router;

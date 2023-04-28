@@ -15,47 +15,53 @@ class TokenManager {
     }
   
 
-  async refreshToken(refreshTokenFunc) {
-    const release = await this.mutex.acquire();
-
-    try {
-      // Check if the token has already been refreshed
-      if (this.token && !this.isTokenExpired(this.token)) {
+    async refreshToken(refreshTokenFunc) {
+      const release = await this.mutex.acquire();
+    
+      try {
+        // Check if the token has already been refreshed
+        if (this.token && !this.isTokenExpired(this.token)) {
+          return this.token;
+        }
+    
+        this.token = await refreshTokenFunc();
         return this.token;
+      } finally {
+        release();
       }
-
-      this.token = await refreshTokenFunc();
-      return this.token;
-    } finally {
-      release();
     }
-  }
+    
 
-  async refreshTokenFunc() {
-    const userData = await this.getUserDataFromDatabase({ discord_id: this.user_id });
-  
-    if (!userData) {
-      console.log(`no userdata from getUserDataFromDatabase(discord_id: ${this.user_id}`)
-      throw new Error('Unauthorized');
+    async refreshTokenFunc() {
+      const userData = await this.getUserDataFromDatabase({ discord_id: this.user_id });
+    
+      if (!userData) {
+        console.log(`no userdata from getUserDataFromDatabase(discord_id: ${this.user_id}`);
+        throw new Error('Unauthorized');
+      }
+    
+      const refreshToken = userData.refresh_token;
+      console.log(`${DISCORD_CLIENT_ID}\n${DISCORD_CLIENT_SECRET}\n${refreshToken}`)
+
+        const newTokenResponse = await this.oauth.tokenRequest({
+          clientId: DISCORD_CLIENT_ID,
+          clientSecret: DISCORD_CLIENT_SECRET,
+          grantType: 'refresh_token',
+          refreshToken,
+        });
+      
+        const newAccessToken = newTokenResponse.access_token;
+        const newRefreshToken = newTokenResponse.refresh_token;
+        const expiresIn = newTokenResponse.expires_in;
+        console.log(`new token: ${newAccessToken}\n\tnew refresh: ${newRefreshToken}\n\texpires in: ${expiresIn}`);
+      
+        const expiresAt = Date.now() + expiresIn * 1000;
+      
+        await this.updateAccessToken(this.user_id, newAccessToken, newRefreshToken, expiresAt);
+        return { newAccessToken, expiresIn };
+        
     }
-  
-    const refreshToken = userData.refresh_token;
-    const newTokenResponse = await this.oauth.tokenRequest({
-      clientId: DISCORD_CLIENT_ID,
-      clientSecret: DISCORD_CLIENT_SECRET,
-      grantType: 'refresh_token',
-      refreshToken,
-    });
-  
-    const newAccessToken = newTokenResponse.access_token;
-    const newRefreshToken = newTokenResponse.refresh_token;
-    const expiresIn = newTokenResponse.expires_in;
-
-    const expiresAt = Date.now() + expiresIn * 1000;
-  
-    await this.updateAccessToken(this.user_id, newAccessToken, newRefreshToken, expiresAt);
-    return newAccessToken;
-  }
+    
   
 
   isTokenExpired(token) {

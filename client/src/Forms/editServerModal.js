@@ -35,7 +35,7 @@ function EditServerModal({ visible, setVisible, server, onServerUpdated }) {
                 }
             })
             .catch((info) => {
-                console.log('Validate Failed:', info);
+                message.error('Validate Failed:', info);
             });
     };
 

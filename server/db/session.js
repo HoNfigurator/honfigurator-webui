@@ -43,7 +43,7 @@ async function createUser(userData, accessToken, refreshToken, expiresAt) {
 
 async function updateAccessToken(user_id, newAccessToken, newRefreshToken, expiresAt) {
   return new Promise((resolve, reject) => {
-    db.run('UPDATE users SET access_token = ?, refresh_token = ?, expires_at = ? WHERE id = ?', [newAccessToken, newRefreshToken, expiresAt, user_id], (err) => {
+    db.run('UPDATE users SET access_token = ?, refresh_token = ?, expires_at = ? WHERE discord_id = ?', [newAccessToken, newRefreshToken, expiresAt, user_id], (err) => {
       if (err) {
         return reject(new CustomError(500, `Error updating access token: ${err.message}`));
       }

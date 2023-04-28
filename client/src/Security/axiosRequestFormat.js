@@ -6,7 +6,7 @@ export const axiosInstanceTest = axios.create({
 });
 
 export const createAxiosInstanceServer = (selectedServer) => {
-  console.log(`Selected server is: ${selectedServer}`);
+  // console.log(`Selected server is: ${selectedServer}`);
   return axios.create({
     baseURL: '/api',
     headers: {
@@ -19,9 +19,21 @@ export const createAxiosInstanceServer = (selectedServer) => {
 };
 
 export const axiosInstanceUI = axios.create({
-    baseURL: '/api-ui',
-    headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('sessionToken')}`,
-    },
+  baseURL: '/api-ui',
+  headers: {
+      'Content-Type': 'application/json',
+  },
 });
+
+axiosInstanceUI.interceptors.request.use(
+(config) => {
+  const token = localStorage.getItem('sessionToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+},
+(error) => {
+  return Promise.reject(error);
+}
+);

@@ -21,15 +21,15 @@ export const ServerListProvider = ({ children }) => {
   const getServers = async () => {
     try {
       setServerStatusLoading(true);
-      const response = await axiosInstanceUI.get('/user/get_servers');
-      console.log('Response data:', response.data); // Log the response data
+      const response = await axiosInstanceUI.get(`/user/get_servers`);
+      // console.log('Response data:', response.data); // Log the response data
       const data = response.data;
 
       if (data && data.length) {
         const formattedServers = await Promise.all(
           data.map(async (server) => {
             const status = await performTCPCheck(server.address);
-            console.log(`Status: ${status}`);
+            // console.log(`Status: ${status}`);
             return {
               label: server.name,
               value: server.address,

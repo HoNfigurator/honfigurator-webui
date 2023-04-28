@@ -11,6 +11,16 @@ const { oauth } = require('../controllers/userController');
 const router = express.Router();
 const net = require('net');
 
+function removeTimestampParam(req, res, next) {
+  if (req.query.timestamp) {
+      delete req.query.timestamp;
+      const urlWithoutTimestamp = req.originalUrl.replace(/[?&]_t=\d+/, '');
+      console.log(urlWithoutTimestamp);
+      req.url = urlWithoutTimestamp;
+  }
+  next();
+}
+
 // Authenticate a user with Discord OAUTH2
 router.get('/user/auth/discord/callback', userController.discordOAuth2);
 
@@ -158,16 +168,10 @@ async function discordAuthMiddleware(req, res, next) {
             console.log('Discord access token expired or about to expire, refreshing...');
 
             const tokenManager = new TokenManager(oauth, userData.discord_id, userController.getUserDataFromDatabase, userController.updateAccessToken);
-            const { newAccessToken, newRefreshToken, expiresIn } = await tokenManager.refreshToken(tokenManager.refreshTokenFunc.bind(tokenManager));
-
-            // Calculate the new expiration timestamp
-            const expiresAt = Date.now() + expiresIn * 1000;
-
-            console.log(`New Discord access token: ${newAccessToken}`);
-
-            await userController.updateAccessToken(userData.user_id, newAccessToken, newRefreshToken, expiresAt);
+            const tokenData = await tokenManager.refreshToken(tokenManager.refreshTokenFunc.bind(tokenManager));
+            const { newAccessToken, expiresIn } = tokenData;
+            console.log(`new data:\n\t${newAccessToken}\n\t${expiresIn}`);
         }
-
         next();
     } catch (error) {
         console.error('Failed to refresh Discord access token:', error);

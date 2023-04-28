@@ -4,6 +4,7 @@ import { Card, Row, Col, Collapse, Button, message } from 'antd';
 import StatusDetail from './StatusDetail';
 import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
 import { SelectedServerValueContext } from './App';
+import './ServerStatus.css';
 
 function ServerStates() {
   const [serverStates, setServerStates] = useState([]);
@@ -97,7 +98,7 @@ function ServerStates() {
         <div>
           <Button onClick={expandAll} style={{ marginRight: '8px' }}>Expand all</Button>
           <Button onClick={collapseAll} style={{ marginRight: '8px' }}>Collapse all</Button>
-        <Button
+          <Button
             type="primary"
             onClick={(e) => {
               e.stopPropagation();
@@ -116,28 +117,28 @@ function ServerStates() {
           >Schedule stop all
           </Button>
         </div>
-        <div style={{ display: 'flex' }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>
+        <div className="legend-container">
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Queued', 'No'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Queued</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Starting', 'No'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Starting</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Ready', 'No'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Ready</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Occupied', 'No'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Occupied</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Occupied', 'Yes'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Scheduled Shutdown</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Unknown', 'No'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Unknown</span>
           </div>

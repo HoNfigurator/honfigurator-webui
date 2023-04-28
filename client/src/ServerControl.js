@@ -73,7 +73,7 @@ const ServerControl = () => {
   useEffect(() => {
     const fetchGlobalConfig = async () => {
       const response = await axiosInstanceServer.get(`/get_global_config?_t=${Date.now()}`);
-      console.log(response);
+      // console.log(response);
       setGlobalConfig(response.data);
     };
     fetchGlobalConfig();
@@ -241,14 +241,14 @@ const ServerControl = () => {
   // fetch server instances data from API endpoint
   const fetchServerInstances = async () => {
     const responseInstances = await axiosInstanceServer.get(`/get_instances_status?_t=${Date.now()}`);
-    console.log('Raw Response Data:', responseInstances.data);
+    // console.log('Raw Response Data:', responseInstances.data);
     const transformedData = Object.entries(responseInstances.data).map(([key, value]) => {
       return {
         name: key,
         ...value,
       };
     });
-    console.log('Server Instances Data:', transformedData);
+    // console.log('Server Instances Data:', transformedData);
     setServerInstances(transformedData);
 
     // Calculate total configured servers from the response data

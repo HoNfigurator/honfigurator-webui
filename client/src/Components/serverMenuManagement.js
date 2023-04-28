@@ -27,7 +27,7 @@ export const handleEditServer = (event, server, setServerToEdit, setEditServerMo
 
 export const handleRemoveServer = async (event, server, getServers) => {
     event.stopPropagation();
-    console.log("Remove server:", server);
+    // console.log("Remove server:", server);
     const payload = {
         name: server.label
     }

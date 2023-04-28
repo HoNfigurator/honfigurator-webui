@@ -73,12 +73,25 @@ function AppContent() {
 
   const [stateMessage, setStateMessage] = useState(null);
 
-  useInactivityLogout(() => handleLogout(navigate, 'You have been logged out due to inactivity.', setStateMessage, setAuthenticated), 3600, authenticated);
+  useInactivityLogout(() => handleLogout(navigate, 'You have been logged out due to inactivity.', setStateMessage, setAuthenticated), 3600, authenticated, setStateMessage);
 
   const headerHeight = 64;
 
+  useEffect(() => {
+    if (authenticated) {
+      getServers()
+        .then(() => {
+          if (!userSelected && serverOptions.length > 0) {
+            setSelectedServer(serverOptions[0].label);
+            setSelectedServerValue(serverOptions[0].value);
+          }
+        })
+        .catch((err) => console.error(err));
+    }
+  }, [authenticated, userSelected]);
+
   const handleServerChange = (value) => {
-    console.log("IVE BEEN CLICKED")
+    // console.log("IVE BEEN CLICKED")
     const selected = serverOptions.find((option) => option.value === value);
     if (selected) {
       setSelectedServer(selected.label);
@@ -92,49 +105,49 @@ function AppContent() {
   )?.status;
 
   const serverListMenu = (
-  <Menu
-    style={{
-      minWidth: '300px', // Increase the width of the dropdown list
-    }}
-  >
-    {serverOptions.map((option, index) => (
-      <Menu.Item key={index}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div onClick={() => handleServerChange(option.value)} style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
-            {getServerStatusIndicator(option.status)} <strong>{option.label}</strong> {/* Make server name bold */}
+    <Menu
+      style={{
+        minWidth: '300px', // Increase the width of the dropdown list
+      }}
+    >
+      {serverOptions.map((option, index) => (
+        <Menu.Item key={index}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div onClick={() => handleServerChange(option.value)} style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
+              {getServerStatusIndicator(option.status)} <strong>{option.label}</strong> {/* Make server name bold */}
+            </div>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <small style={{ color: "gray", marginRight: "10px" }}>{option.value}</small> {/* Show server address preview */}
+              <Button
+                size="small"
+                type="primary"
+                onClick={(e) => {
+                  handleEditServer(e, option, setServerToEdit, setEditServerModalVisible);
+                }}
+                style={{
+                  marginRight: '5px',
+                }}
+              >
+                Edit
+              </Button>
+              <Button
+                size="small"
+                danger
+                onClick={(e) => {
+                  handleRemoveServer(e, option, getServers);
+                }}
+              >
+                Remove
+              </Button>
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <small style={{ color: "gray", marginRight: "10px" }}>{option.value}</small> {/* Show server address preview */}
-            <Button
-              size="small"
-              type="primary"
-              onClick={(e) => {
-                handleEditServer(e, option, setServerToEdit, setEditServerModalVisible);
-              }}
-              style={{
-                marginRight: '5px',
-              }}
-            >
-              Edit
-            </Button>
-            <Button
-              size="small"
-              danger
-              onClick={(e) => {
-                handleRemoveServer(e, option, getServers);
-              }}
-            >
-              Remove
-            </Button>
-          </div>
-        </div>
+        </Menu.Item>
+      ))}
+      <Menu.Item key="add_server" onClick={() => setAddServerModalVisible(true)}>
+        Add Server
       </Menu.Item>
-    ))}
-    <Menu.Item key="add_server" onClick={() => setAddServerModalVisible(true)}>
-      Add Server
-    </Menu.Item>
-  </Menu>
-);
+    </Menu>
+  );
 
 
 
@@ -249,35 +262,19 @@ function AppContent() {
                   <Routes>
                     <Route
                       path="/"
-                      element={
-                        selectedServerStatus === "OK"
-                          ? <RequireAuth sessionToken={token} component={Home} />
-                          : <ServerNotConnected />
-                      }
+                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? Home : ServerNotConnected} />}
                     />
                     <Route
                       path="/status"
-                      element={
-                        selectedServerStatus === "OK"
-                          ? <RequireAuth sessionToken={token} component={ServerStatus} nestedObject="Performance (lag)" />
-                          : <ServerNotConnected />
-                      }
+                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? ServerStatus : ServerNotConnected} nestedObject="Performance (lag)" />}
                     />
                     <Route
                       path="/control"
-                      element={
-                        selectedServerStatus === "OK"
-                          ? <RequireAuth sessionToken={token} component={ServerControl} />
-                          : <ServerNotConnected />
-                      }
+                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? ServerControl : ServerNotConnected} />}
                     />
                     <Route
                       path="/roles"
-                      element={
-                        selectedServerStatus === "OK"
-                          ? <RequireAuth sessionToken={token} component={UsersandRoles} />
-                          : <ServerNotConnected />
-                      }
+                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? UsersandRoles : ServerNotConnected} />}
                     />
                     <Route
                       path="/login"
