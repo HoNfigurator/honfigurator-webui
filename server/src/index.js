@@ -13,7 +13,7 @@ console.log(envFilePath);
 
 console.log(process.env.DISCORD_CLIENT_ID);
 
-if (envFilePath === "production") {
+if (process.env.NODE_ENV === "production") {
   const privateKey = fs.readFileSync('privkey.pem', 'utf8');
   const certificate = fs.readFileSync('cert.pem', 'utf8');
   const ca = fs.readFileSync('fullchain.pem', 'utf8');
@@ -31,7 +31,7 @@ app.use('/api-ui', userRoutes);
 app.use(express.json()); // Add this line
 app.use('/api', serverRoutes);
 
-if (envFilePath === "production") {
+if (process.env.NODE_ENV === "production") {
   const httpsServer = https.createServer(credentials, app);
   httpsServer.listen(PORT, () => {
     console.log(`HTTPS server is running on port ${PORT}`);
