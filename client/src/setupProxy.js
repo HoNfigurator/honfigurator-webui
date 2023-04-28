@@ -7,14 +7,20 @@ const agent = new https.Agent({
   rejectUnauthorized: true
 });
 
-module.exports = function(app) {
+module.exports = function (app) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'https://localhost:5000',
+      target: 'http://localhost:3001',
       changeOrigin: true,
-      secure: true,
-      agent: agent
+    })
+  );
+
+  app.use(
+    '/api-ui',
+    createProxyMiddleware({
+      target: 'http://localhost:3001',
+      changeOrigin: true,
     })
   );
 };

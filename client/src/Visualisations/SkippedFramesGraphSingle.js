@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import axios from 'axios';
+import { SelectedServerValueContext } from '../App';
+import { axiosInstanceServer, createAxiosInstanceServer } from '../Security/axiosRequestFormat';
 
 function SkippedFramesGraph({ port }) {
   const [data, setData] = useState([]);
+  const selectedServerValue = useContext(SelectedServerValueContext);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/get_skipped_frame_data?port=${port}`);
+      const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue);
+      const response = await axiosInstanceServer.get(`/get_skipped_frame_data/${port}?_t=${Date.now()}`);
       const sortedData = Object.entries(response.data)
         .map(([timestamp, value]) => ({
           timestamp: new Date(parseInt(timestamp) * 1000).getTime(),
@@ -18,9 +21,7 @@ function SkippedFramesGraph({ port }) {
     } catch (error) {
       console.error('Error fetching skipped frame data:', error);
     }
-  };
-  
-  
+  }, [port]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -28,7 +29,7 @@ function SkippedFramesGraph({ port }) {
     }, 5000);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchData]);
 
 const formatValue = (value) => `${value}ms`;
 

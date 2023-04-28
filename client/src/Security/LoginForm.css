@@ -48,3 +48,28 @@
   .login-form-submit-btn:hover {
     background-color: #40a9ff;
   }
+
+  .login-form-discord-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #7289da;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.login-form-discord-btn:hover {
+  background-color: #5865f2;
+}
+
+.discord-logo {
+  height: 1.2rem;
+  margin-right: 0.5rem;
+}

@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Card, Row, Col, Collapse, Button } from 'antd';
+// ServerStatus.js
+import React, { useState, useEffect, useContext } from 'react';
+import { Card, Row, Col, Collapse, Button, message } from 'antd';
 import StatusDetail from './StatusDetail';
-import RequireAuth from './Security/RequireAuth';
-
+import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
+import { SelectedServerValueContext } from '../App';
+import './ServerStatus.css';
 
 function ServerStates() {
   const [serverStates, setServerStates] = useState([]);
   const [activeKey, setActiveKey] = useState(null);
+  const selectedServerValue = useContext(SelectedServerValueContext);
+  const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue);
 
   const fetchServerStates = async () => {
-    const response = await axios.get('/api/get_instances_status');
+    const response = await axiosInstanceServer.get(`/get_instances_status?_t=${Date.now()}`);
     setServerStates(response.data);
   };
 
@@ -34,6 +37,8 @@ function ServerStates() {
       return '#d9d029' // Yellow
     } else if (status === 'Occupied' && scheduled_shutdown === 'Yes') {
       return '#fc8c03' // Orange
+    } else if (status === 'Ready' && scheduled_shutdown === 'Yes') {
+      return '#fc8c03' // Orange
     } else if (status === 'Queued') {
       return '#8e918e' // Greay
     }
@@ -41,26 +46,32 @@ function ServerStates() {
   };
 
   const handleServerAction = async (port, action) => {
-    // Make axios call to appropriate endpoint based on the action
-    if (action === 'stop') {
-      await axios.post('/api/stop_server', { port });
-    } else if (action === 'start') {
-      // Replace with your actual start server API endpoint
-      await axios.post('/api/start_server', { port });
+    try {
+      // Make axios call to appropriate endpoint based on the action
+      if (action === 'stop') {
+        await axiosInstanceServer.post(`/stop_server/${port}?_t=${Date.now()}`);
+        message.success('Server schedule stopped successfully!');
+      } else if (action === 'start') {
+        // Replace with your actual start server API endpoint
+        await axiosInstanceServer.post(`/start_server/${port}?_t=${Date.now()}`);
+        message.success('Server started successfully!');
+      }
+
+      // Fetch updated server states after the action is performed
+      fetchServerStates();
+    } catch (error) {
+      message.error('An error occurred while performing the action. Please try again later.');
     }
-  
-    // Fetch updated server states after the action is performed
-    fetchServerStates();
   };
 
   const getButtonAction = (status) => {
     return status === 'Ready' || status === 'Occupied' || status === 'Queued' || status === 'Starting' ? 'stop' : 'start';
   };
-  
+
   const getButtonText = (status) => {
     return status === 'Ready' || status === 'Occupied' || status === 'Queued' || status === 'Starting' ? 'Stop Server' : 'Start Server';
   };
-  
+
   const getButtonColor = (status) => {
     return status === 'Ready' || status === 'Occupied' || status === 'Queued' || status === 'Starting' ? '#FF5252' : '#3f87ba';
   }
@@ -86,30 +97,48 @@ function ServerStates() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
           <Button onClick={expandAll} style={{ marginRight: '8px' }}>Expand all</Button>
-          <Button onClick={collapseAll}>Collapse all</Button>
+          <Button onClick={collapseAll} style={{ marginRight: '8px' }}>Collapse all</Button>
+          <Button
+            type="primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleServerAction("all", "start");
+            }}
+            style={{ marginRight: '8px', backgroundColor: getButtonColor("Unknown") }}
+          >Start all
+          </Button>
+          <Button
+            type="primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleServerAction("all", "stop");
+            }}
+            style={{ marginRight: '8px', backgroundColor: getButtonColor("Occupied") }}
+          >Schedule stop all
+          </Button>
         </div>
-        <div style={{ display: 'flex' }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>
+        <div className="legend-container">
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Queued', 'No'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Queued</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Starting', 'No'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Starting</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Ready', 'No'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Ready</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Occupied', 'No'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Occupied</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', marginRight: '16px' }}>
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Occupied', 'Yes'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Scheduled Shutdown</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div className="legend-item">
             <div style={{ backgroundColor: getStatusColor('Unknown', 'No'), width: '20px', height: '20px', marginRight: '10px' }}></div>
             <span>Unknown</span>
           </div>
@@ -171,4 +200,4 @@ function ServerStates() {
   );
 }
 
-export default RequireAuth(ServerStates);
+export default ServerStates;
