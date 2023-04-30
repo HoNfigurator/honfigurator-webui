@@ -1,8 +1,8 @@
 // App.js
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Layout, Menu, Dropdown, Spin, Button, message } from 'antd';
-import { DownOutlined } from '@ant-design/icons';
+import { Layout, Menu, Dropdown, Spin, Button, message, Tooltip } from 'antd';
+import { DownOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import HoNfiguratorIcon from './images/HonFigurator_Icon.png';
 import UsersandRoles from './Components/UsersRoles';
 import './App.css';
@@ -16,7 +16,7 @@ import RequireAuth, { useAuthenticatedState } from './Security/RequireAuth';
 import useInactivityLogout from './Security/userInactivityLogout';
 import AddServerModal from './Forms/addServerModal';
 import { ServerListProvider, useServerList } from './Components/serverListContext';
-
+import { axiosInstanceUI, createAxiosInstanceServer } from './Security/axiosRequestFormat';
 import EditServerModal from './Forms/editServerModal';
 import { handleEditServer, handleRemoveServer, ServerNotConnected, getServerStatusIndicator } from './Components/serverMenuManagement';
 import handleLogout from './Security/logout';
@@ -36,10 +36,14 @@ function App() {
 }
 
 
+
 function AppContent() {
   const [selectedServer, setSelectedServer] = useState('');
   const [selectedServerValue, setSelectedServerValue] = useState('');
   const [userSelected, setUserSelected] = useState(false); // Add this line
+
+  const [userInfo, setUserInfo] = useState(null);
+  const [userRolePermissions, setUserRolePermissions] = useState(null);
 
   const { serverOptions, serverStatusLoading, firstLoad, getServers } = useServerList();
   const [isDropdownMenuOpen, setIsDropdownMenuOpen] = useState(false);
@@ -90,6 +94,30 @@ function AppContent() {
     }
   }, [authenticated, userSelected]);
 
+
+  const fetchUserInfo = async () => {
+    try {
+      const discordUserResponse = await axiosInstanceUI.get('/user/info');
+      setUserInfo(discordUserResponse.data);
+
+      const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue);
+      // Fetch user's role and permissions
+      const rolePermissionsResponse = await axiosInstanceServer.get('/user')
+      const roles = rolePermissionsResponse.data.roles;
+      const perms = rolePermissionsResponse.data.perms;
+      setUserRolePermissions({ roles, perms });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (authenticated) {
+      fetchUserInfo();
+    }
+  }, [authenticated]);
+
+
   const handleServerChange = (value) => {
     // console.log("IVE BEEN CLICKED")
     const selected = serverOptions.find((option) => option.value === value);
@@ -113,8 +141,14 @@ function AppContent() {
       {serverOptions.map((option, index) => (
         <Menu.Item key={index}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div onClick={() => handleServerChange(option.value)} style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
-              {getServerStatusIndicator(option.status)} <strong>{option.label}</strong> {/* Make server name bold */}
+            <div
+              onClick={() => handleServerChange(option.value)}
+              style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
+            >
+              <span style={{ marginRight: "8px" }}>
+                {getServerStatusIndicator(option.status)}
+              </span>
+              <strong>{option.label}</strong> {/* Make server name bold */}
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
               <small style={{ color: "gray", marginRight: "10px" }}>{option.value}</small> {/* Show server address preview */}
@@ -173,23 +207,54 @@ function AppContent() {
                 alt="HoNfigurator Logo"
                 style={{ height: "50px", marginRight: "10px" }}
               />
-              <h1 style={{ fontSize: "2.5em", margin: 0 }}>HoNfigurator</h1>
+              <h1 style={{ fontSize: "2.5em", margin: 0 }}>
+                HoNfigurator<span style={{ fontSize: "0.5em", color: "red", verticalAlign: "top" }}> beta</span>
+              </h1>
             </div>
-            {authenticated && (
-              <Dropdown
-                overlay={serverListMenu}
-                trigger={["click"]}
-                // Add this line
-                onVisibleChange={(visible) => setIsDropdownMenuOpen(visible)}
-              >
-                <a className="ant-dropdown-link" onClick={(e) => e.preventDefault()}>
-                  {selectedServer
-                    ? `Connected to: ${selectedServer}`
-                    : "No connected servers."}
-                  {getServerStatusIndicator(selectedServerStatus)} <DownOutlined />
-                </a>
-              </Dropdown>
-            )}
+            <div style={{ display: "flex", alignItems: "center" }}>
+              {userInfo && (
+                <div style={{
+                  color: "white",
+                  marginRight: "16px",
+                  fontSize: "1.2em",
+                  fontWeight: "500",
+                  fontStyle: "italic",
+                  letterSpacing: "0.5px"
+                }}>
+                  {userInfo.discordName}
+                </div>
+              )}
+              {userRolePermissions && (
+                <Tooltip
+                  title={
+                    <>
+                      <div>Roles: {userRolePermissions.roles.join(', ')}</div>
+                      <div>Permissions: {userRolePermissions.perms.join(', ')}</div>
+                    </>
+                  }
+                  placement="bottomRight"
+                >
+                  <div style={{ marginRight: "16px", color: "white", cursor: "pointer" }}>
+                    <InfoCircleOutlined />
+                  </div>
+                </Tooltip>
+              )}
+              {authenticated && (
+                <Dropdown
+                  overlay={serverListMenu}
+                  trigger={["click"]}
+                  // Add this line
+                  onVisibleChange={(visible) => setIsDropdownMenuOpen(visible)}
+                >
+                  <a className="ant-dropdown-link" onClick={(e) => e.preventDefault()}>
+                    {selectedServer
+                      ? `Connected to: ${selectedServer}`
+                      : "No connected servers."}
+                    {getServerStatusIndicator(selectedServerStatus)} <DownOutlined />
+                  </a>
+                </Dropdown>
+              )}
+            </div>
           </Header>
           <Layout style={{ height: `calc(100vh - ${headerHeight}px)` }}>
             {authenticated && (

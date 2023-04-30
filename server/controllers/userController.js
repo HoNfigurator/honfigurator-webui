@@ -62,6 +62,53 @@ async function reauthenticateUser(req, res) {
 }
 
 
+async function getUserInfoFromDiscord(accessToken) {
+  try {
+    const response = await axios.get('https://discord.com/api/users/@me', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const { username, discriminator } = response.data;
+
+    // Combine the username and discriminator to get the full Discord name.
+    const discordName = `${username}#${discriminator}`;
+
+    return discordName;
+  } catch (error) {
+    console.error('Error fetching user info:', error);
+    return null;
+  }
+}
+
+
+async function getDiscordUserInfo(req, res) {
+  try {
+    const { user_id } = req.user;
+
+    if (!user_id) {
+      console.log("No user ID in request body.");
+      return res.status(401).json({ error: 'No user was provided in the request body.' });
+    }
+
+    const userData = await getUserDataFromDatabase({ discord_id: user_id });
+
+    if (!userData) {
+      console.log(`User not found for ID ${user_id}`);
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const discordName = await getUserInfoFromDiscord(userData.access_token);
+    console.log(discordName);
+
+    res.json({ discordName });
+  } catch (error) {
+    console.error('Error fetching Discord user info:', error);
+    return res.status(500).json({ error: `Server error occurred while fetching Discord user info. ${error}` });
+  }
+}
+
 async function discordOAuth2(req, res) {
   const { code } = req.query;
   try {
@@ -198,6 +245,7 @@ async function deleteServer(req, res) {
 
 
 module.exports = {
+  getDiscordUserInfo,
   discordOAuth2,
   getCurrentUser,
   updateAccessToken,

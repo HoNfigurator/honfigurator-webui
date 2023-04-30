@@ -13,7 +13,7 @@ export const useServerList = () => {
   return context;
 };
 
-export const ServerListProvider = ({ children }) => {
+export const ServerListProvider = ({ children, authenticated }) => {
   const [serverOptions, setServerOptions] = useState([]);
   const [serverStatusLoading, setServerStatusLoading] = useState(false);
   const [firstLoad, setFirstLoad] = useState(true);
@@ -50,14 +50,18 @@ export const ServerListProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    getServers();
-
-    const intervalId = setInterval(() => {
+    if (authenticated) {
       getServers();
+    }
+  
+    const intervalId = setInterval(() => {
+      if (authenticated) {
+        getServers();
+      }
     }, 60000);
-
+  
     return () => clearInterval(intervalId);
-  }, []);
+  }, [authenticated]);
 
   const value = {
     serverOptions,

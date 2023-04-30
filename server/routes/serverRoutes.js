@@ -143,6 +143,7 @@ const createProxyHandlerWithParams = (path, method) => {
     Role getters
 */
 router.get('/permissions/all', addAccessToken, createProxyHandler('/api/permissions/all', 'get'));
+router.get('/user', addAccessToken, createProxyHandler('/api/user', 'get'));
 router.get('/users/all', addAccessToken, createProxyHandler('/api/users/all', 'get'));
 router.get('/users/default', addAccessToken, createProxyHandler('/api/users/default', 'get'));
 router.post('/users/add', addAccessToken, createProxyHandler('/api/users/add', 'post'));

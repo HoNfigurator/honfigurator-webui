@@ -32,6 +32,9 @@ router.get('/user/reauth', discordAuthMiddleware, userController.reauthenticateU
 // Get users managed server list
 router.get('/user/get_servers', authMiddleware, discordAuthMiddleware, userController.getManagedServers);
 
+// Get users information from the Discord API
+router.get('/user/info', authMiddleware, discordAuthMiddleware, userController.getDiscordUserInfo);
+
 // Add server to users managed server list
 router.post('/user/add_server', authMiddleware, discordAuthMiddleware, userController.addManagedServer);
 
