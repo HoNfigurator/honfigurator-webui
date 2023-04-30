@@ -112,10 +112,10 @@ function AppContent() {
   };
 
   useEffect(() => {
-    if (authenticated) {
+    if (authenticated && selectedServerValue) {
       fetchUserInfo();
     }
-  }, [authenticated]);
+  }, [authenticated, selectedServerValue]);
 
 
   const handleServerChange = (value) => {
