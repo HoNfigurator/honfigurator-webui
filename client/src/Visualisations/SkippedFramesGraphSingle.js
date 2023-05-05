@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { SelectedServerValueContext } from '../App';
+import { SelectedServerContext } from '../App';
 import { axiosInstanceServer, createAxiosInstanceServer } from '../Security/axiosRequestFormat';
 
 function SkippedFramesGraph({ port }) {
   const [data, setData] = useState([]);
-  const selectedServerValue = useContext(SelectedServerValueContext);
+  const {selectedServerValue, selectedServerPort} = useContext(SelectedServerContext);
 
   const fetchData = useCallback(async () => {
     try {
-      const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue);
+      const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue, selectedServerPort);
       const response = await axiosInstanceServer.get(`/get_skipped_frame_data/${port}?_t=${Date.now()}`);
       const sortedData = Object.entries(response.data)
         .map(([timestamp, value]) => ({

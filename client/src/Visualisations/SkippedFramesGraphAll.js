@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } f
 
 function CustomTooltip({ payload, label, active }) {
   if (active && payload && payload.length) {
-    const { value, server } = payload[0].payload;
+    const { value, server } = payload[0]?.payload || {};
     return (
       <div style={{ backgroundColor: 'white', padding: '8px', border: '1px solid #ccc' }}>
         <p>Server: {server}</p>
@@ -19,7 +19,7 @@ function SkippedFramesGraphAll({ data }) {
   const [graphData, setGraphData] = useState([]);
 
   useEffect(() => {
-    if (data) {
+    if (data && Object.keys(data).length > 0) {
       const graphData = Object.entries(data)
         .flatMap(([server, serverData]) =>
           Object.entries(serverData).map(([timestamp, value]) => ({
@@ -33,10 +33,15 @@ function SkippedFramesGraphAll({ data }) {
     }
   }, [data]);
 
+
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   };
+
+  if (graphData.length === 0) {
+    return <div>No data available.</div>;
+  }
 
   return (
     <ResponsiveContainer width="100%" height={200}>

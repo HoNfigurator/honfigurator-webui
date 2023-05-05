@@ -191,13 +191,13 @@ async function getManagedServers(req, res) {
 async function addManagedServer(req, res) {
   try {
     const { user_id } = req.user;
-    const { name, address } = req.body;
-    const existingServer = await checkForExistingServer(user_id, name, address);
+    const { name, address, port } = req.body;
+    const existingServer = await checkForExistingServer(user_id, name, address, port);
     if (existingServer.length > 0) {
       console.log(`Adding server.. already exists! ${existingServer}`);
       return res.status(500).json({ error: 'Server name OR address is already registered.' })
     }
-    const server = await createServerForUser(user_id, name, address);
+    const server = await createServerForUser(user_id, name, address, port);
 
     res.json(server);
   } catch (error) {
@@ -214,10 +214,14 @@ async function updateServer(req, res) {
 
     const oldName = old.name;
     const oldAddress = old.address;
+    const oldPort = old.port;
     const newName = updated.name;
     const newAddress = updated.address;
+    const newPort = updated.port;
 
-    const result = await updateServerForUser(user_id, oldName, oldAddress, newName, newAddress);
+    console.log(`Updating server for ${user_id}\n\tOld name: ${old.name}\n\tOld address: ${old.address}\n\tNew name: ${updated.name}\n\tNew address: ${updated.address}`)
+
+    const result = await updateServerForUser(user_id, oldName, oldAddress, oldPort, newName, newAddress, newPort);
 
     res.json(result);
   } catch (error) {

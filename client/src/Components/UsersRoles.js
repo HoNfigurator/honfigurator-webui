@@ -119,11 +119,10 @@ function UsersandRoles() {
 
   // Add this line to get the selected server from context
   // const selectedServer = useContext(SelectedServerContext);
-  const { selectedServerValue } = useContext(SelectedServerContext);
-  // console.log(`server context ${selectedServerValue}`)
+  const { selectedServerValue, selectedServerPort } = useContext(SelectedServerContext);
 
   // Replace axiosInstanceServer with serverAxios using createAxiosInstanceServer
-  const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue);
+  const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue, selectedServerPort);
 
   const handleUserOk = async () => {
     try {
@@ -136,11 +135,7 @@ function UsersandRoles() {
       // console.log(payload);
 
       if (editingUser) {
-        const response = await axiosInstanceServer.post("/users/add", payload, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await axiosInstanceServer.post("/users/edit", payload);
         // console.log("editing user")
         if (response.status === 201 || response.status === 200) {
           message.success('Edited user successfully.')
@@ -303,8 +298,8 @@ function UsersandRoles() {
       setUsers(usersResult.data.filter(user => user.discord_id));
       setRoles(rolesResult.data);
       setPermissions(permissionsResult.data);
-      console.log(defaultRoles);
-      console.log(defaultUsers);
+      // console.log(defaultRoles);
+      // console.log(defaultUsers);
       // console.log('Users Result:', usersResult);
       // console.log('Roles Result:', rolesResult);
       // console.log('Permissions Result:', permissionsResult.data);

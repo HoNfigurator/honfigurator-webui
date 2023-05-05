@@ -87,11 +87,11 @@ async function getUserServersFromDatabase(user_id) {
   });
 }
 
-async function createServerForUser(user_id, name, address) {
+async function createServerForUser(user_id, name, address, port) {
   return new Promise((resolve, reject) => {
     db.run(
-      'INSERT INTO servers (user_id, name, address) VALUES (?, ?, ?)',
-      [user_id, name, address],
+      'INSERT INTO servers (user_id, name, address, port) VALUES (?, ?, ?, ?)',
+      [user_id, name, address, port],
       function (err) {
         if (err) {
           return reject(new CustomError(500, `Error creating server: ${err.message}`));
@@ -103,9 +103,9 @@ async function createServerForUser(user_id, name, address) {
   });
 }
 
-async function checkForExistingServer(user_id, name, address) {
+async function checkForExistingServer(user_id, name, address, port) {
   return new Promise((resolve, reject) => {
-    db.all('SELECT * FROM servers WHERE (name = ? or address = ?) and user_id = ?', [name, address, user_id], (err, rows) => {
+    db.all('SELECT * FROM servers WHERE (name = ? or address = ?) and user_id = ? and port = ?', [name, address, user_id, port], (err, rows) => {
       if (err) {
         return reject(new CustomError(500, `Error checking for existing server: ${err.message}`));
       }
@@ -114,9 +114,9 @@ async function checkForExistingServer(user_id, name, address) {
   });
 }
 
-async function updateServerForUser(user_id, oldName, oldAddress, newName, newAddress) {
+async function updateServerForUser(user_id, oldName, oldAddress, oldPort, newName, newAddress, newPort) {
   return new Promise((resolve, reject) => {
-    db.run('UPDATE servers SET name = ?, address = ? WHERE name = ? AND user_id = ?', [newName, newAddress, oldName, user_id], (err) => {
+    db.run('UPDATE servers SET name = ?, address = ?, port = ? WHERE name = ? AND user_id = ?', [newName, newAddress, newPort, oldName, user_id], (err) => {
       if (err) {
         return reject(new CustomError(500, `Error updating server: ${err.message}`));
       }

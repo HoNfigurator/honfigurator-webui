@@ -5,10 +5,10 @@ import SkippedFramesGraphAll from './Visualisations/SkippedFramesGraphAll';
 import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
 import { SelectedServerContext } from './App';
 
-async function fetchStats(selectedServer) {
+async function fetchStats(selectedServerValue, selectedServerPort) {
   try {
-    const axiosInstanceServer = createAxiosInstanceServer(selectedServer);
-    
+    const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue, selectedServerPort);
+
     const requests = [
       axiosInstanceServer.get(`/get_server_config_item/svr_ip?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_total_allowed_servers?_t=${Date.now()}`),
@@ -21,25 +21,27 @@ async function fetchStats(selectedServer) {
       axiosInstanceServer.get(`/get_memory_total?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_num_matches_ingame?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_num_players_ingame?_t=${Date.now()}`),
-      axiosInstanceServer.get(`/get_skipped_frame_data/all?_t=${Date.now()}`)
+      axiosInstanceServer.get(`/get_skipped_frame_data/all?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_cpu_name?_t=${Date.now()}`)
     ];
 
     const responses = await Promise.allSettled(requests);
     const data = responses.map((response) => response.status === 'fulfilled' ? response.value.data : {});
 
     return {
-      serverIP: data[0],
+      serverIP: data[0] || null,
       serverTotalAllowed: data[1].total_allowed_servers || null,
       serversTotal: data[2].total_servers || null,
       cpusTotal: data[3].total_cpus || null,
-      cpusReserved: data[4].num_reserved_cpus || null,
+      cpusReserved: data[4] || null,
       totalPerCore: data[5] || null,
       cpuUsed: data[6].cpu_usage || null,
       memoryUsed: data[7].memory_usage || null,
       memoryTotal: data[8].memory_total || null,
       numMatchesInGame: data[9].num_matches_ingame || null,
       numPlayersInGame: data[10].num_players_ingame || null,
-      skippedFramesData: data[11],
+      skippedFramesData: data[11] || null,
+      cpuName: data[12].cpu_name || null
     };
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -48,44 +50,39 @@ async function fetchStats(selectedServer) {
 }
 
 function Home() {
-  const { selectedServerValue } = useContext(SelectedServerContext);
+  const { selectedServerValue, selectedServerPort } = useContext(SelectedServerContext);
   const [stats, setStats] = useState({});
 
   useEffect(() => {
     async function fetchInitialStats() {
-      const initialStats = await fetchStats(selectedServerValue);
-      setStats(initialStats);
+      if (selectedServerValue && selectedServerPort) {
+        const initialStats = await fetchStats(selectedServerValue, selectedServerPort);
+        setStats(initialStats);
+      }
     }
-  
+
     fetchInitialStats();
     const intervalId = setInterval(async () => {
-      const updatedStats = await fetchStats(selectedServerValue);
-      setStats(updatedStats);
+      if (selectedServerValue && selectedServerPort) {
+        const updatedStats = await fetchStats(selectedServerValue, selectedServerPort);
+        setStats(updatedStats);
+      }
     }, 5000);
-  
+
     // Add a cleanup function to clear the interval when the component is unmounted or the server is changed
     return () => clearInterval(intervalId);
-  }, [selectedServerValue]);
+  }, [selectedServerValue, selectedServerPort]);
+
 
   return (
     <div>
       <h1>Server Statistics</h1>
-      <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
-        <Col xs={24} md={8}>
-          <Statistic title="Public IP" value={stats.serverIP || 'Loading...'} />
-        </Col>
-      </Row>
-      <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
-        <Col xs={24} md={8}>
-          <Statistic title="Servers Configured" value={`${stats.serversTotal || '-'} / ${stats.serverTotalAllowed || '-'}`} suffix={<span style={{ fontSize: '14px' }}>total</span>}/>
-        </Col>
-        <Col xs={24} md={8}>
-          <Statistic title="Total Logical CPU Cores" value={stats.cpusTotal || '-'} suffix={ <span style={{ fontSize: '14px' }}>cores ({stats.cpusReserved} reserved for OS)</span>}/>
-        </Col>
-        <Col xs={24} md={8}>
-          <Statistic title="Max Servers per Thread" value={stats.totalPerCore}/>
-        </Col>
-      </Row>
+      <Statistic title="Public IP" value={stats.serverIP ? stats.serverIP.toString() : 'Loading...'} />
+      <Statistic title="CPU" value={stats.cpuName ? stats.cpuName.toString() : 'Loading...'} />
+      <Statistic title="Servers Configured" value={`${stats.serversTotal || '0'} / ${stats.serverTotalAllowed ? stats.serverTotalAllowed.toString() : '-'}`} suffix={<span style={{ fontSize: '14px' }}>total</span>} />
+      <Statistic title="Total Logical CPU Cores" value={stats.cpusTotal ? stats.cpusTotal.toString() : '-'} suffix={<span style={{ fontSize: '14px' }}>cores ({stats.cpusReserved ? stats.cpusReserved.toString() : '-'} threads reserved for OS)</span>} />
+      <Statistic title="Max Servers per Thread" value={stats.totalPerCore ? stats.totalPerCore.toString() : '-'} />
+
       <Row gutter={[16, 16]} style={{ marginBottom: '20px' }}>
         <Col xs={24} md={8}>
           <Statistic title="Memory Usage" value=' ' />
@@ -136,12 +133,12 @@ function Home() {
       <h1>Skipped Frames</h1>
       <Row gutter={[16, 16]}>
         <Col xs={24}>
-          {stats.skippedFramesData && <SkippedFramesGraphAll data={stats.skippedFramesData} serverNames={Object.keys(stats.skippedFramesData)} />}
+          <SkippedFramesGraphAll data={Array.isArray(stats.skippedFramesData) ? stats.skippedFramesData : []} />
         </Col>
       </Row>
     </div>
   );
-  
+
 }
 
 export default Home;

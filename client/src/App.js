@@ -20,10 +20,11 @@ import { axiosInstanceUI, createAxiosInstanceServer } from './Security/axiosRequ
 import EditServerModal from './Forms/editServerModal';
 import { handleEditServer, handleRemoveServer, ServerNotConnected, getServerStatusIndicator } from './Components/serverMenuManagement';
 import handleLogout from './Security/logout';
+import LogViewer from './Components/ServerTroubleshooting';
 
 const { Header, Content, Sider } = Layout;
+
 export const SelectedServerContext = createContext(null);
-export const SelectedServerValueContext = createContext('');
 
 function App() {
   return (
@@ -35,12 +36,14 @@ function App() {
   );
 }
 
-
-
 function AppContent() {
-  const [selectedServer, setSelectedServer] = useState('');
-  const [selectedServerValue, setSelectedServerValue] = useState('');
-  const [userSelected, setUserSelected] = useState(false); // Add this line
+  const [selectedServer, setSelectedServer] = useState("");
+  const [selectedServerValue, setSelectedServerValue] = useState("");
+  const [selectedServerPort, setSelectedServerPort] = useState("");
+
+  const [userSelected, setUserSelected] = useState(false);
+  const [loadingServerData, setLoadingServerData] = useState(false);
+
 
   const [userInfo, setUserInfo] = useState(null);
   const [userRolePermissions, setUserRolePermissions] = useState(null);
@@ -48,20 +51,30 @@ function AppContent() {
   const { serverOptions, serverStatusLoading, firstLoad, getServers } = useServerList();
   const [isDropdownMenuOpen, setIsDropdownMenuOpen] = useState(false);
 
+  const selectedServerStatus = serverOptions.find(
+    (option) => option.value === selectedServerValue
+  )?.status;
+
   useEffect(() => {
     if (serverOptions.length > 0) {
-      const previousSelectedServer = serverOptions.find((option) => option.value === selectedServerValue);
+      const lastSelectedServer = localStorage.getItem("lastSelectedServer");
+      const previousSelectedServer = serverOptions.find(
+        (option) => option.value === lastSelectedServer
+      );
 
       if (previousSelectedServer) {
         setSelectedServer(previousSelectedServer.label);
         setSelectedServerValue(previousSelectedServer.value);
+        setSelectedServerPort(previousSelectedServer.port);
       } else {
         setSelectedServer(serverOptions[0].label);
         setSelectedServerValue(serverOptions[0].value);
+        setSelectedServerPort(serverOptions[0].port);
       }
     } else {
-      setSelectedServer('');
-      setSelectedServerValue('');
+      setSelectedServer("");
+      setSelectedServerValue("");
+      setSelectedServerPort("");
     }
   }, [serverOptions]);
 
@@ -81,56 +94,61 @@ function AppContent() {
 
   const headerHeight = 64;
 
-  useEffect(() => {
-    if (authenticated) {
-      getServers()
-        .then(() => {
-          if (!userSelected && serverOptions.length > 0) {
-            setSelectedServer(serverOptions[0].label);
-            setSelectedServerValue(serverOptions[0].value);
-          }
-        })
-        .catch((err) => console.error(err));
-    }
-  }, [authenticated, userSelected]);
-
-
-  const fetchUserInfo = async () => {
+  const fetchUserInfoDiscord = async () => {
     try {
       const discordUserResponse = await axiosInstanceUI.get('/user/info');
       setUserInfo(discordUserResponse.data);
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+    }
+  }
 
+  const fetchUserInfoServer = async () => {
+    try {
       const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue);
       // Fetch user's role and permissions
-      const rolePermissionsResponse = await axiosInstanceServer.get('/user')
+      const rolePermissionsResponse = await axiosInstanceServer.get('/user');
       const roles = rolePermissionsResponse.data.roles;
       const perms = rolePermissionsResponse.data.perms;
       setUserRolePermissions({ roles, perms });
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching role permissions:", error);
+      const roles = ["Not available"];
+      const perms = ["Not available"];
+      setUserRolePermissions({ roles, perms });
+    } finally {
+      setLoadingServerData(false); // Set loadingServerData to false
     }
   };
 
   useEffect(() => {
-    if (authenticated && selectedServerValue) {
-      fetchUserInfo();
+    if (authenticated) {
+      fetchUserInfoDiscord();
+      if (!userSelected && serverOptions.length > 0) {
+        setSelectedServer(serverOptions[0].label);
+        setSelectedServerValue(serverOptions[0].value);
+      }
+      if (selectedServerValue && selectedServerStatus === "OK") {
+        // setLoadingServerData(true);
+        fetchUserInfoServer();
+      } else {
+        setLoadingServerData(false);
+      }
     }
-  }, [authenticated, selectedServerValue]);
+  }, [authenticated, userSelected, selectedServerValue, selectedServerStatus]);
 
 
   const handleServerChange = (value) => {
-    // console.log("IVE BEEN CLICKED")
     const selected = serverOptions.find((option) => option.value === value);
     if (selected) {
+      setLoadingServerData(true);
       setSelectedServer(selected.label);
       setSelectedServerValue(value);
-      setUserSelected(true); // Add this line
+      setSelectedServerPort(selected.port); // Add this line
+      setUserSelected(true);
+      localStorage.setItem('lastSelectedServer', value);
     }
   };
-
-  const selectedServerStatus = serverOptions.find(
-    (option) => option.value === selectedServerValue
-  )?.status;
 
   const serverListMenu = (
     <Menu
@@ -139,10 +157,12 @@ function AppContent() {
       }}
     >
       {serverOptions.map((option, index) => (
-        <Menu.Item key={index}>
+        <Menu.Item
+          key={index}
+          onClick={() => handleServerChange(option.value)} // Move the onClick event here
+        >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div
-              onClick={() => handleServerChange(option.value)}
               style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
             >
               <span style={{ marginRight: "8px" }}>
@@ -156,6 +176,7 @@ function AppContent() {
                 size="small"
                 type="primary"
                 onClick={(e) => {
+                  e.stopPropagation(); // Prevent click event from bubbling up to the Menu.Item
                   handleEditServer(e, option, setServerToEdit, setEditServerModalVisible);
                 }}
                 style={{
@@ -168,6 +189,7 @@ function AppContent() {
                 size="small"
                 danger
                 onClick={(e) => {
+                  e.stopPropagation(); // Prevent click event from bubbling up to the Menu.Item
                   handleRemoveServer(e, option, getServers);
                 }}
               >
@@ -183,112 +205,133 @@ function AppContent() {
     </Menu>
   );
 
-
-
   const showAddServerButton = authenticated && serverOptions.length === 0;
 
   return (
     <>
-      <SelectedServerContext.Provider value={{ selectedServer, setSelectedServer, selectedServerValue, setSelectedServerValue }}>
-        <SelectedServerValueContext.Provider value={selectedServerValue}>
-          <Header
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              backgroundColor: "#001529",
-              color: "white",
-              padding: "0 16px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <img
-                src={HoNfiguratorIcon}
-                alt="HoNfigurator Logo"
-                style={{ height: "50px", marginRight: "10px" }}
-              />
-              <h1 style={{ fontSize: "2.5em", margin: 0 }}>
-                HoNfigurator<span style={{ fontSize: "0.5em", color: "red", verticalAlign: "top" }}> beta</span>
-              </h1>
-            </div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              {userInfo && (
-                <div style={{
-                  color: "white",
-                  marginRight: "16px",
-                  fontSize: "1.2em",
-                  fontWeight: "500",
-                  fontStyle: "italic",
-                  letterSpacing: "0.5px"
-                }}>
-                  {userInfo.discordName}
-                </div>
-              )}
-              {userRolePermissions && (
-                <Tooltip
-                  title={
-                    <>
-                      <div>Roles: {userRolePermissions.roles.join(', ')}</div>
-                      <div>Permissions: {userRolePermissions.perms.join(', ')}</div>
-                    </>
-                  }
-                  placement="bottomRight"
-                >
-                  <div style={{ marginRight: "16px", color: "white", cursor: "pointer" }}>
-                    <InfoCircleOutlined />
-                  </div>
-                </Tooltip>
-              )}
-              {authenticated && (
-                <Dropdown
-                  overlay={serverListMenu}
-                  trigger={["click"]}
-                  // Add this line
-                  onVisibleChange={(visible) => setIsDropdownMenuOpen(visible)}
-                >
-                  <a className="ant-dropdown-link" onClick={(e) => e.preventDefault()}>
-                    {selectedServer
-                      ? `Connected to: ${selectedServer}`
-                      : "No connected servers."}
-                    {getServerStatusIndicator(selectedServerStatus)} <DownOutlined />
-                  </a>
-                </Dropdown>
-              )}
-            </div>
-          </Header>
-          <Layout style={{ height: `calc(100vh - ${headerHeight}px)` }}>
-            {authenticated && (
-              <Sider
-                width={200}
-                className="site-layout-background"
-                style={{ height: "100%" }}
-              >
-                <Menu
-                  mode="inline"
-                  defaultSelectedKeys={["1"]}
-                  style={{ height: "100%", borderRight: 0, marginTop: "auto" }}
-                >
-                  <Menu.Item key="1">
-                    <Link to="/">Home</Link>
-                  </Menu.Item>
-                  <Menu.Item key="2">
-                    <Link to="/status">Server Status</Link>
-                  </Menu.Item>
-                  <Menu.Item key="3">
-                    <Link to="/control">Server Control</Link>
-                  </Menu.Item>
-                  <Menu.Item key="4">
-                    <Link to="/roles">Users & Roles</Link>
-                  </Menu.Item>
-                  <Menu.Item key="5" style={{ marginTop: "auto" }} onClick={() => handleLogout(navigate, "You have manually logged out.", setStateMessage, setAuthenticated)}>
-                    Logout
-                  </Menu.Item>
-                </Menu>
-              </Sider>
+      <SelectedServerContext.Provider
+        value={{
+          selectedServer,
+          setSelectedServer,
+          selectedServerValue,
+          setSelectedServerValue,
+          selectedServerPort,
+          setSelectedServerPort,
+        }}
+      >
+        <Header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: "#001529",
+            color: "white",
+            padding: "0 16px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <img
+              src={HoNfiguratorIcon}
+              alt="HoNfigurator Logo"
+              style={{ height: "50px", marginRight: "10px" }}
+            />
+            <h1 style={{ fontSize: "2.5em", margin: 0 }}>
+              HoNfigurator<span style={{ fontSize: "0.5em", color: "red", verticalAlign: "top" }}> beta</span>
+            </h1>
+          </div>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            {userInfo && (
+              <div style={{
+                color: "white",
+                marginRight: "16px",
+                fontSize: "1.2em",
+                fontWeight: "500",
+                fontStyle: "italic",
+                letterSpacing: "0.5px"
+              }}>
+                {userInfo.discordName}
+              </div>
             )}
-            <Layout style={{ padding: "24px" }}>
-              <Content>
-                {serverStatusLoading && firstLoad && authenticated ? (
+            {userRolePermissions && (
+              <Tooltip
+                title={
+                  <>
+                    <div>Roles: {userRolePermissions.roles.join(', ')}</div>
+                    <div>Permissions: {userRolePermissions.perms.join(', ')}</div>
+                  </>
+                }
+                placement="bottomRight"
+              >
+                <div style={{ marginRight: "16px", color: "white", cursor: "pointer" }}>
+                  <InfoCircleOutlined />
+                </div>
+              </Tooltip>
+            )}
+            {authenticated && (
+              <Dropdown
+                overlay={serverListMenu}
+                trigger={["click"]}
+                // Add this line
+                onVisibleChange={(visible) => setIsDropdownMenuOpen(visible)}
+              >
+                <a className="ant-dropdown-link" onClick={(e) => e.preventDefault()}>
+                  {selectedServer
+                    ? `Connected to: ${selectedServer}`
+                    : "No connected servers."}
+                  {getServerStatusIndicator(selectedServerStatus)} <DownOutlined />
+                </a>
+              </Dropdown>
+            )}
+          </div>
+        </Header>
+        <Layout style={{ height: `calc(100vh - ${headerHeight}px)` }}>
+          {authenticated && (
+            <Sider
+              width={200}
+              className="site-layout-background"
+              style={{ height: "100%" }}
+            >
+              <Menu
+                mode="inline"
+                defaultSelectedKeys={["1"]}
+                style={{ height: "100%", borderRight: 0, marginTop: "auto" }}
+              >
+                <Menu.Item key="1">
+                  <Link to="/">Home</Link>
+                </Menu.Item>
+                <Menu.Item key="2">
+                  <Link to="/status">Server Status</Link>
+                </Menu.Item>
+                <Menu.Item key="3">
+                  <Link to="/control">Server Control</Link>
+                </Menu.Item>
+                <Menu.Item key="4">
+                  <Link to="/roles">Users & Roles</Link>
+                </Menu.Item>
+                <Menu.Item key="5">
+                  <Link to="/troubleshooting">Troubleshooting</Link>
+                </Menu.Item>
+                <Menu.Item key="6" style={{ marginTop: "auto" }} onClick={() => handleLogout(navigate, "You have manually logged out.", setStateMessage, setAuthenticated)}>
+                  Logout
+                </Menu.Item>
+              </Menu>
+            </Sider>
+          )}
+          <Layout style={{ padding: "24px" }}>
+            <Content>
+              {serverStatusLoading && firstLoad && authenticated ? (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                  }}
+                >
+                  <Spin size="large" />
+                </div>
+              ) :
+                loadingServerData ? (
                   <div
                     style={{
                       display: "flex",
@@ -342,6 +385,10 @@ function AppContent() {
                       element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? UsersandRoles : ServerNotConnected} />}
                     />
                     <Route
+                      path="/troubleshooting"
+                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? LogViewer : ServerNotConnected} />}
+                    />
+                    <Route
                       path="/login"
                       element={<LoginForm stateMessage={stateMessage} />}
                     />
@@ -352,28 +399,27 @@ function AppContent() {
                     />
                   </Routes>
                 )}
-              </Content>
-            </Layout>
+            </Content>
           </Layout>
-          <AddServerModal
-            visible={addServerModalVisible}
-            setVisible={setAddServerModalVisible}
-            onServerAdded={(server) => {
-              setSelectedServer(server.label);
-              setSelectedServerValue(server.value);
-              getServers();
-            }}
-          />
-          <EditServerModal
-            visible={editServerModalVisible}
-            setVisible={setEditServerModalVisible}
-            server={serverToEdit}
-            onServerUpdated={(updatedServer) => {
-              setEditServerModalVisible(false);
-              getServers(); // Refresh the server list after updating
-            }}
-          />
-        </SelectedServerValueContext.Provider>
+        </Layout>
+        <AddServerModal
+          visible={addServerModalVisible}
+          setVisible={setAddServerModalVisible}
+          onServerAdded={(server) => {
+            setSelectedServer(server.label);
+            setSelectedServerValue(server.value);
+            getServers(server.value);
+          }}
+        />
+        <EditServerModal
+          visible={editServerModalVisible}
+          setVisible={setEditServerModalVisible}
+          server={serverToEdit}
+          onServerUpdated={(updatedServer) => {
+            setEditServerModalVisible(false);
+            getServers(); // Refresh the server list after updating
+          }}
+        />
       </SelectedServerContext.Provider>
     </>
   );

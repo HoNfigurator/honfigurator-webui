@@ -105,7 +105,7 @@ function useCurrentUser(sessionToken, location) {
   return { loading, authenticated, currentUser, setAuthenticated };
 }
 
-export function useAuthenticatedState(sessionToken, location) {
+export function useAuthenticatedState(sessionToken, location = window.location) {
   const userState = useCurrentUser(sessionToken, location);
   return userState; // Return the entire userState object
 }

@@ -1,36 +1,12 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, notification } from 'antd';
+import { Modal, Form, Input, notification, Row, Col } from 'antd';
 import { axiosInstanceUI } from '../Security/axiosRequestFormat';
 import { performTCPCheck } from '../Helpers/healthChecks';
+import { errorMessage, WarningMessageDenied, WarningMessageTCP } from './Messages';
 
 const AddServerModal = ({ visible, setVisible, onServerAdded }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-
-  const WarningMessage = () => (
-    <>
-      <p>The server could not be contacted over port 5000.</p>
-      <p>Please ensure the following:</p>
-      <ul>
-        <li>HoNfigurator API is running</li>
-        <li>Firewall is not blocking</li>
-        <li>Network router is forwarding ports</li>
-      </ul>
-      <p>Do you want to proceed anyway?</p>
-    </>
-  );
-
-  const errorMessage = (error) => (
-    <>
-      <p>Failed to add the server.</p>
-      <p>{error.message}</p>
-      {error.response && error.response.data && (
-        <p>
-          {error.response.data.error}: {error.response.data.message}
-        </p>
-      )}
-    </>
-  );
 
   const handleCancel = () => {
     form.resetFields();
@@ -40,32 +16,46 @@ const AddServerModal = ({ visible, setVisible, onServerAdded }) => {
   const handleOk = async () => {
     setLoading(true);
     const values = await form.validateFields();
-    const tcpCheckStatus = await performTCPCheck(values.serverAddress);
+    const tcpCheckStatusResponse = await performTCPCheck(values.serverAddress, values.serverPort);
+    // console.log(tcpCheckStatusResponse);
 
-    if (tcpCheckStatus !== 'OK') {
-      Modal.confirm({
-        title: 'Warning',
-        content: <WarningMessage />,
-        okText: 'Yes',
-        cancelText: 'No',
-        onOk: () => {
-          addServer(values);
-        },
-        onCancel: () => {
-          setLoading(false);
-        },
-      });
-      
-    } else {
+    if (tcpCheckStatusResponse.status === 200) {
       addServer(values);
+    } else if (tcpCheckStatusResponse.status === 500) {
+      Modal.warning({
+        title: 'Warning',
+        content: <WarningMessageTCP port={values.serverPort || 5000} />,
+        okText: 'Okay',
+        onOk: () => {
+          setLoading(false);
+        }
+      });
+    } else if (tcpCheckStatusResponse.status === 401 || tcpCheckStatusResponse.status === 403) {
+      Modal.warning({
+        title: 'Warning',
+        content: <WarningMessageDenied />,
+        okText: 'Okay',
+        onOk: () => {
+          setLoading(false);
+        }
+      });
+      form.resetFields();
+    } else {
+      notification.error({
+        message: 'Error',
+        description: <>{errorMessage(tcpCheckStatusResponse)}</>,
+      });
+      form.resetFields();
     }
+    setLoading(false);
   };
 
   const addServer = async (values) => {
     try {
       const payload = {
         name: values.serverName,
-        address: values.serverAddress
+        address: values.serverAddress,
+        port: values.port
       }
       const response = await axiosInstanceUI.post('/user/add_server', payload);
 
@@ -83,7 +73,8 @@ const AddServerModal = ({ visible, setVisible, onServerAdded }) => {
       // Pass the added server's information to the callback
       onServerAdded({
         label: payload.name,
-        value: payload.address
+        value: payload.address,
+        port: payload.port
       });
 
     } catch (error) {
@@ -102,8 +93,26 @@ const AddServerModal = ({ visible, setVisible, onServerAdded }) => {
         <Form.Item label="Server Name" name="serverName" rules={[{ required: true, message: 'Please input the server name!' }]}>
           <Input />
         </Form.Item>
-        <Form.Item label="Server Address" name="serverAddress" rules={[{ required: true, message: 'Please input the server address!' }]}>
-          <Input />
+        <Form.Item label="Server Address" required>
+          <Row gutter={8}>
+            <Col span={18}>
+              <Form.Item name="serverAddress" rules={[{ required: true, message: 'Please input the server address!' }]}>
+                <Input style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="serverPort" noStyle>
+                <Input
+                  addonBefore="Port"
+                  type="number"
+                  min={0}
+                  max={65535}
+                  defaultValue={5000}
+                  placeholder="Port (default: 5000)"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form.Item>
       </Form>
     </Modal>

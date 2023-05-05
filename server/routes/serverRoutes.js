@@ -27,8 +27,9 @@ router.use(removeTimestampParam);
 
 function getTargetUrl(path, req) {
     const selectedServer = req.headers['selected-server'];
+    const selectedPort = req.headers['selected-port'];
     // console.log(`Selected server is ${selectedServer}`);
-    const baseUrl = selectedServer ? `https://${selectedServer}:5000` : 'https://localhost:5000';
+    const baseUrl = selectedServer ? `https://${selectedServer}:${selectedPort||5000}` : 'https://localhost:5000';
     // console.log(`Target URL is ${baseUrl}${path}`)
     return `${baseUrl}${path}`;
 }
@@ -76,6 +77,7 @@ const createProxyHandler = (path, method) => {
                     ...req.headers,
                     'Content-Type': 'application/json',
                     'selected-server': req.headers['selected-server'], // Add this line
+                    'selected-port': req.headers['selected-port'],
                     Authorization: req.headers.authorization,
                 },
                 data: req.body, // Add this line
@@ -176,6 +178,20 @@ router.get('/get_num_matches_ingame', addAccessToken, createProxyHandler('/api/g
 router.get('/get_instances_status', addAccessToken, createProxyHandler('/api/get_instances_status', 'get'));
 router.get('/get_global_config', addAccessToken, createProxyHandler('/api/get_global_config','get'));
 router.get('/get_skipped_frame_data/:port', addAccessToken, createProxyHandlerWithParams('/api/get_skipped_frame_data/:port', 'get'));
+router.get('/get_cpu_name', addAccessToken, createProxyHandlerWithParams('/api/get_cpu_name', 'get'));
+router.get('/get_honfigurator_log_entries/:num', addAccessToken, createProxyHandlerWithParams('/api/get_honfigurator_log_entries/:num', 'get'));
+router.get(
+    '/get_honfigurator_log_file',
+    addAccessToken,
+    (req, res, next) => {
+      // Set the appropriate headers for downloading the file
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename=honfigurator_logs.txt');
+      next();
+    },
+    createProxyHandler('/api/get_honfigurator_log_file')
+  );
+  
 /*
     Server setters
 */

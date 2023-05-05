@@ -3,18 +3,22 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Card, Row, Col, Collapse, Button, message } from 'antd';
 import StatusDetail from './StatusDetail';
 import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
-import { SelectedServerValueContext } from '../App';
+import { SelectedServerContext } from '../App';
 import './ServerStatus.css';
 
 function ServerStates() {
   const [serverStates, setServerStates] = useState([]);
   const [activeKey, setActiveKey] = useState(null);
-  const selectedServerValue = useContext(SelectedServerValueContext);
-  const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue);
+  const {selectedServerValue, selectedServerPort} = useContext(SelectedServerContext);
+  const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue, selectedServerPort);
 
   const fetchServerStates = async () => {
     const response = await axiosInstanceServer.get(`/get_instances_status?_t=${Date.now()}`);
-    setServerStates(response.data);
+    if (response.data) {
+      setServerStates(response.data);
+    } else {
+      console.log("No servers.")
+    }
   };
 
   useEffect(() => {
