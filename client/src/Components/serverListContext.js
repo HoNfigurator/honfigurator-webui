@@ -20,7 +20,6 @@ export const ServerListProvider = ({ children }) => {
   const [firstLoad, setFirstLoad] = useState(true);
 
   const getServers = async (selectedServerAddress) => {
-    console.log("Get servers");
     try {
       setServerStatusLoading(true);
       const response = await axiosInstanceUI.get(`/user/get_servers`);
@@ -56,11 +55,8 @@ export const ServerListProvider = ({ children }) => {
         const formattedServers = serverResults
           .filter((result) => result.status === "fulfilled" && result.value !== null)
           .map((result) => result.value);
-        console.log("setting");
-        console.log(formattedServers);
         setServerOptions(formattedServers);
       } else {
-        console.log("clearing")
         setServerOptions([]);
       }
     } catch (error) {

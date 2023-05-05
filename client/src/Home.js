@@ -133,7 +133,7 @@ function Home() {
       <h1>Skipped Frames</h1>
       <Row gutter={[16, 16]}>
         <Col xs={24}>
-          <SkippedFramesGraphAll data={Array.isArray(stats.skippedFramesData) ? stats.skippedFramesData : []} />
+          {stats.skippedFramesData && <SkippedFramesGraphAll data={stats.skippedFramesData} serverNames={Object.keys(stats.skippedFramesData)} />}
         </Col>
       </Row>
     </div>
