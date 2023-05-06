@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+.header-container {
+    background-image: linear-gradient(to left, #585857, #383434);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 64px;
+    width: 100%;
+    box-shadow: 0 2px 8px rgba(131, 131, 131, 0.1);
+    font-family: 'Roboto', sans-serif;
+}
+
+
+.header-title {
+    display: flex;
+    align-items: center;
+    color: white;
+}
+
+.header-title-text {
+    font-size: 24px; /* Increase font size */
+    font-weight: 500; /* Increase font weight */
+    margin: 0; /* Remove default margin */
+}
+
+.header-logo {
+    height: 50px;
+    margin-right: 10px;
+}
+
+.header-beta-label {
+    color: red;
+    font-size: 0.5em;
+    margin-left: 5px;
+}
+
+.header-dropdown {
+    display: flex;
+    align-items: center;
+}
+
+.ant-dropdown-link {
+    color: white;
+    transition: 0.3s; /* Add transition for hover effect */
+}
+
+.ant-dropdown-link:hover {
+    color: #eca80a; /* Change the color on hover */
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.user-roles-text {
+    color: white;
+}
+
+.user-roles-btn {
+    color: #eb8715;
+}
+
+.logout-button.ant-btn {
+    color: white;
+    border: none;
+    background: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: 0.3s;
+}
+  
+.logout-button.ant-btn:hover {
+    color: #ef8f09; /* Change the color on hover */
+}

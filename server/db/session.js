@@ -87,7 +87,7 @@ async function getUserServersFromDatabase(user_id) {
   });
 }
 
-async function createServerForUser(user_id, name, address, port) {
+async function createServerForUser(user_id, name, address, port = 5000) {
   return new Promise((resolve, reject) => {
     db.run(
       'INSERT INTO servers (user_id, name, address, port) VALUES (?, ?, ?, ?)',
@@ -114,7 +114,7 @@ async function checkForExistingServer(user_id, name, address, port) {
   });
 }
 
-async function updateServerForUser(user_id, oldName, oldAddress, oldPort, newName, newAddress, newPort) {
+async function updateServerForUser(user_id, oldName, oldAddress, oldPort, newName, newAddress, newPort = 5000) {
   return new Promise((resolve, reject) => {
     db.run('UPDATE servers SET name = ?, address = ?, port = ? WHERE name = ? AND user_id = ?', [newName, newAddress, newPort, oldName, user_id], (err) => {
       if (err) {

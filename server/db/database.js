@@ -75,10 +75,10 @@ function addPortColumnIfNotExists() {
           console.error('Error adding port column:', err);
         } else {
           console.log('Added port column with default value 5000');
-          updateExistingServerPortValues();
         }
       });
     }
+    updateExistingServerPortValues();
   });
 }
 

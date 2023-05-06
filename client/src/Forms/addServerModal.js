@@ -55,7 +55,7 @@ const AddServerModal = ({ visible, setVisible, onServerAdded }) => {
       const payload = {
         name: values.serverName,
         address: values.serverAddress,
-        port: values.port
+        port: values.serverPort
       }
       const response = await axiosInstanceUI.post('/user/add_server', payload);
 

@@ -298,11 +298,6 @@ function UsersandRoles() {
       setUsers(usersResult.data.filter(user => user.discord_id));
       setRoles(rolesResult.data);
       setPermissions(permissionsResult.data);
-      // console.log(defaultRoles);
-      // console.log(defaultUsers);
-      // console.log('Users Result:', usersResult);
-      // console.log('Roles Result:', rolesResult);
-      // console.log('Permissions Result:', permissionsResult.data);
     }
     fetchData();
   }, []);

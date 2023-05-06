@@ -53,34 +53,6 @@ const LogEntry = React.memo(({ logEntry, index }) => {
     );
 });
 
-const downloadLogs = async () => {
-    const axiosInstanceServer = createAxiosInstanceServer(
-        SelectedServerContext.selectedServerValue,
-        SelectedServerContext.selectedServerPort
-    );
-    try {
-        const response = await axiosInstanceServer.get('/get_honfigurator_log_file', {
-            responseType: 'json', // Set the responseType to 'json'
-            headers: {
-                Accept: 'application/json', // Set the expected content type
-            },
-        });
-
-        // Join the array of lines with the appropriate newline character(s) for the client's OS
-        const fileContent = response.data.join('');
-
-        // Create a temporary link element and click it to trigger the download
-        const url = window.URL.createObjectURL(new Blob([fileContent], { type: 'text/plain' }));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'honfigurator_logs.txt'); // Set the filename for the downloaded file
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode.removeChild(link);
-    } catch (error) {
-        console.error('Error downloading logs:', error);
-    }
-};
 
 
 const LogViewer = () => {
@@ -88,11 +60,43 @@ const LogViewer = () => {
     const [loading, setLoading] = useState(true);
     const [selectedLogLevel, setSelectedLogLevel] = useState('ALL');
 
-
+    const { selectedServerValue, selectedServerPort } = useContext(SelectedServerContext);
+    // console.log(selectedServerValue);
+    // console.log(selectedServerPort);
     const axiosInstanceServer = createAxiosInstanceServer(
-        SelectedServerContext.selectedServerValue,
-        SelectedServerContext.selectedServerPort
+        selectedServerValue,
+        selectedServerPort
     );
+
+
+    const downloadLogs = async () => {
+        // const axiosInstanceServer = createAxiosInstanceServer(
+        //     SelectedServerContext.selectedServerValue,
+        //     SelectedServerContext.selectedServerPort
+        // );
+        try {
+            const response = await axiosInstanceServer.get('/get_honfigurator_log_file', {
+                responseType: 'json', // Set the responseType to 'json'
+                headers: {
+                    Accept: 'application/json', // Set the expected content type
+                },
+            });
+
+            // Join the array of lines with the appropriate newline character(s) for the client's OS
+            const fileContent = response.data.join('');
+
+            // Create a temporary link element and click it to trigger the download
+            const url = window.URL.createObjectURL(new Blob([fileContent], { type: 'text/plain' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'honfigurator_logs.txt'); // Set the filename for the downloaded file
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+        } catch (error) {
+            console.error('Error downloading logs:', error);
+        }
+    };
 
     const fetchLogs = async () => {
         setLoading(true);
@@ -295,7 +299,7 @@ const LogViewer = () => {
                 </Select>
                 <Select
                     defaultValue={`${itemsPerPage}`}
-                    style={{ width: 120 }}
+                    style={{ width: 120, marginRight: 16 }}
                     onChange={handleItemsPerPageChange}
                 >
                     <Option value="10" label="10">10 per page</Option>

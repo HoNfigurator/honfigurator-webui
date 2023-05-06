@@ -73,16 +73,28 @@ function Home() {
     return () => clearInterval(intervalId);
   }, [selectedServerValue, selectedServerPort]);
 
-
   return (
     <div>
       <h1>Server Statistics</h1>
-      <Statistic title="Public IP" value={stats.serverIP ? stats.serverIP.toString() : 'Loading...'} />
-      <Statistic title="CPU" value={stats.cpuName ? stats.cpuName.toString() : 'Loading...'} />
-      <Statistic title="Servers Configured" value={`${stats.serversTotal || '0'} / ${stats.serverTotalAllowed ? stats.serverTotalAllowed.toString() : '-'}`} suffix={<span style={{ fontSize: '14px' }}>total</span>} />
-      <Statistic title="Total Logical CPU Cores" value={stats.cpusTotal ? stats.cpusTotal.toString() : '-'} suffix={<span style={{ fontSize: '14px' }}>cores ({stats.cpusReserved ? stats.cpusReserved.toString() : '-'} threads reserved for OS)</span>} />
-      <Statistic title="Max Servers per Thread" value={stats.totalPerCore ? stats.totalPerCore.toString() : '-'} />
-
+      <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
+        <Col xs={24} md={8}>
+          <Statistic title="Public IP" value={stats.serverIP ? stats.serverIP.toString() : 'Loading...'} />
+        </Col>
+        <Col xs={24} md={8}>
+          <Statistic title="CPU" value={stats.cpuName ? stats.cpuName.toString() : 'Loading...'} />
+        </Col>
+      </Row>
+      <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
+        <Col xs={24} md={8}>
+          <Statistic title="Servers Configured" value={`${stats.serversTotal || '0'} / ${stats.serverTotalAllowed ? stats.serverTotalAllowed.toString() : '-'}`} suffix={<span style={{ fontSize: '14px' }}>total</span>} />
+        </Col>
+        <Col xs={24} md={8}>
+          <Statistic title="Total Logical CPU Cores" value={stats.cpusTotal ? stats.cpusTotal.toString() : '-'} suffix={<span style={{ fontSize: '14px' }}>cores ({stats.cpusReserved ? stats.cpusReserved.toString() : '-'} threads reserved for OS)</span>} />
+        </Col>
+        <Col xs={24} md={8}>
+          <Statistic title="Max Servers per Thread" value={stats.totalPerCore ? stats.totalPerCore.toString() : '-'} />
+        </Col>
+      </Row>
       <Row gutter={[16, 16]} style={{ marginBottom: '20px' }}>
         <Col xs={24} md={8}>
           <Statistic title="Memory Usage" value=' ' />

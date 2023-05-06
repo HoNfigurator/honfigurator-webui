@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Alert } from 'antd';
+import { Layout, Alert, Card } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './LoginForm.css';
 import discordLogo from '../images/discord-logo.png';
@@ -45,33 +45,34 @@ const LoginForm = ({ stateMessage }) => {
         window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
       }
     };
-    
+
     return (
       <div style={{ textAlign: 'center' }}>
         <button
           onClick={(event) => handleClick(event)}
           className="login-form-discord-btn"
-          style={{ margin: '0 auto' }}
+          style={{ margin: '0 auto', marginTop: '25px' }}
         >
           <img src={discordLogo} alt="Discord Logo" className="discord-logo" />
           Login with Discord
         </button>
       </div>
     );
-    
+
   }
 
   return (
     <Layout style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-      <Content className="login-form-content">
+      <Content className="login-form-content" style={{ backgroundColor: 'transparent' }}>
         <form className="login-form">
-          <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Log In</h2>
+          <h2 className="welcome-title">Welcome to HoNFigurator</h2>
           {stateMessage && <Alert message={stateMessage} type="info" />}
           <LoginWithDiscordButton />
         </form>
       </Content>
     </Layout>
-  );  
+  );
+
 };
 
 export default LoginForm;

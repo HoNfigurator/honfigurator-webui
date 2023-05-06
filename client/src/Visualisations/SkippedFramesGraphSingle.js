@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { SelectedServerContext } from '../App';
-import { axiosInstanceServer, createAxiosInstanceServer } from '../Security/axiosRequestFormat';
+import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
 
 function SkippedFramesGraph({ port }) {
   const [data, setData] = useState([]);

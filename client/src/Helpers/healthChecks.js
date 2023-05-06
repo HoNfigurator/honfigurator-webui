@@ -2,7 +2,7 @@ import { createAxiosInstanceServer } from "../Security/axiosRequestFormat";
 
 export const performTCPCheck = async (address, port) => {
   try {
-    console.log(`pinging ${address}`);
+    // console.log(`pinging ${address}`);
     const axiosInstanceServer = createAxiosInstanceServer(address, port);
     // Set a timeout (in milliseconds) for the request
     const TIMEOUT = 5000; // 3 seconds
