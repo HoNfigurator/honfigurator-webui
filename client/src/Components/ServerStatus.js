@@ -53,11 +53,11 @@ function ServerStates() {
     try {
       // Make axios call to appropriate endpoint based on the action
       if (action === 'stop') {
-        await axiosInstanceServer.post(`/stop_server/${port}?_t=${Date.now()}`);
+        await axiosInstanceServer.post(`/stop_server/${port}?_t=${Date.now()}`, {'dummy_data':0});
         message.success('Server schedule stopped successfully!');
       } else if (action === 'start') {
         // Replace with your actual start server API endpoint
-        await axiosInstanceServer.post(`/start_server/${port}?_t=${Date.now()}`);
+        await axiosInstanceServer.post(`/start_server/${port}?_t=${Date.now()}`, {'dummy_data':0});
         message.success('Server started successfully!');
       }
 

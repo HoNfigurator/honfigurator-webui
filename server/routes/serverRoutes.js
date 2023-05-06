@@ -29,7 +29,7 @@ function getTargetUrl(path, req) {
     const selectedServer = req.headers['selected-server'];
     const selectedPort = req.headers['selected-port'];
     // console.log(`Selected server is ${selectedServer}`);
-    const baseUrl = selectedServer ? `https://${selectedServer}:${selectedPort||5000}` : 'https://localhost:5000';
+    const baseUrl = selectedServer ? `https://${selectedServer}:${selectedPort || 5000}` : 'https://localhost:5000';
     // console.log(`Target URL is ${baseUrl}${path}`)
     return `${baseUrl}${path}`;
 }
@@ -103,6 +103,8 @@ const createProxyHandler = (path, method) => {
 
 const createProxyHandlerWithParams = (path, method) => {
     return async (req, res) => {
+        let url = '';
+        let status_code = '';
         try {
             const fullPath = Object.entries(req.params).reduce(
                 (currentPath, [key, value]) => currentPath.replace(`:${key}`, value),
@@ -117,29 +119,33 @@ const createProxyHandlerWithParams = (path, method) => {
             const newPath = newQuery ? `${fullPath}?${newQuery}` : fullPath;
             const url = getTargetUrl(newPath, req);
             console.log(url);
-
             const response = await axios({
                 url: url,
                 method: method,
                 headers: {
                     ...req.headers,
-                    'Content-Type': 'application/json',
                     'selected-server': req.headers['selected-server'],
+                    'selected-port': req.headers['selected-port'],
                     'Authorization': req.headers.authorization,
                 },
                 data: req.body,
-                httpsAgent: agent,
             });
             res.status(response.status).json(response.data);
+            status_code = response.status;
         } catch (error) {
             if (error.response) {
+                status_code = error.response.status;
                 res.status(error.response.status).json(error.response.data);
             } else {
-                res.status(500).json({ error: 'Internal server error' });
+                status_code = 500;
+                res.status(status_code).json({ error: 'Internal server error' });
             }
+        
+        } finally {
+            console.log(`[${status_code}] - ${url}`);
         }
     };
-};
+}
 
 /*
     Role getters
@@ -176,7 +182,7 @@ router.get('/get_memory_total', addAccessToken, createProxyHandler('/api/get_mem
 router.get('/get_num_players_ingame', addAccessToken, createProxyHandler('/api/get_num_players_ingame', 'get'));
 router.get('/get_num_matches_ingame', addAccessToken, createProxyHandler('/api/get_num_matches_ingame', 'get'));
 router.get('/get_instances_status', addAccessToken, createProxyHandler('/api/get_instances_status', 'get'));
-router.get('/get_global_config', addAccessToken, createProxyHandler('/api/get_global_config','get'));
+router.get('/get_global_config', addAccessToken, createProxyHandler('/api/get_global_config', 'get'));
 router.get('/get_skipped_frame_data/:port', addAccessToken, createProxyHandlerWithParams('/api/get_skipped_frame_data/:port', 'get'));
 router.get('/get_cpu_name', addAccessToken, createProxyHandlerWithParams('/api/get_cpu_name', 'get'));
 router.get('/get_honfigurator_log_entries/:num', addAccessToken, createProxyHandlerWithParams('/api/get_honfigurator_log_entries/:num', 'get'));
@@ -184,14 +190,14 @@ router.get(
     '/get_honfigurator_log_file',
     addAccessToken,
     (req, res, next) => {
-      // Set the appropriate headers for downloading the file
-      res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', 'attachment; filename=honfigurator_logs.txt');
-      next();
+        // Set the appropriate headers for downloading the file
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename=honfigurator_logs.txt');
+        next();
     },
     createProxyHandler('/api/get_honfigurator_log_file')
-  );
-  
+);
+
 /*
     Server setters
 */
@@ -204,8 +210,8 @@ router.post('/stop_server/:port', addAccessToken, createProxyHandlerWithParams('
 router.post('/start_server/:port', addAccessToken, createProxyHandlerWithParams('/api/start_server/:port', 'post'));
 router.post('/add_servers/:num', addAccessToken, createProxyHandlerWithParams('/api/add_servers/:num', 'post'));
 router.post('/remove_servers/:num', addAccessToken, createProxyHandlerWithParams('/api/remove_servers/:num', 'post'));
-router.post('/add_all_servers', addAccessToken, createProxyHandlerWithParams('/api/add_all_servers', 'post'));
-router.post('/remove_all_servers', addAccessToken, createProxyHandlerWithParams('/api/remove_all_servers', 'post'));
+router.post('/add_all_servers', addAccessToken, createProxyHandler('/api/add_all_servers', 'post'));
+router.post('/remove_all_servers', addAccessToken, createProxyHandler('/api/remove_all_servers', 'post'));
 router.get('/ping', addAccessToken, createProxyHandler('/api/ping', 'get'));
 
 module.exports = router;

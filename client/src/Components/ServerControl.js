@@ -64,7 +64,7 @@ const advancedSettingsKeys = [
 const ServerControl = () => {
   const [globalConfig, setGlobalConfig] = useState({ hon_data: {} });
   const [serverInstances, setServerInstances] = useState([]);
-  const {selectedServerValue, selectedServerPort} = useContext(SelectedServerContext);
+  const { selectedServerValue, selectedServerPort } = useContext(SelectedServerContext);
 
   // Add new state variables for total configured servers and total allowed servers
   const [totalConfiguredServers, setTotalConfiguredServers] = useState(0);
@@ -191,7 +191,7 @@ const ServerControl = () => {
         min: Math.max(10001, parseInt(otherValue) + honDataFormItems.svrTotal),
         max: 15000,
       };
-    }    
+    }
   };
   const advancedSettingsItems = Object.entries(globalConfig.hon_data)
     .filter(([key]) => advancedSettingsKeys.includes(key))
@@ -292,8 +292,16 @@ const ServerControl = () => {
   };
 
   useEffect(() => {
-    fetchServerInstances();
+    const intervalId = setInterval(() => {
+      fetchServerInstances();
+    }, 10000); // Run fetchServerInstances every 5000 milliseconds (5 seconds)
+
+    // Clean up the interval when the component unmounts
+    return () => {
+      clearInterval(intervalId);
+    };
   }, []);
+
 
   const updateHonData = async () => {
     try {
@@ -371,7 +379,7 @@ const ServerControl = () => {
 
   const handleAddAllServers = async () => {
     try {
-      const response = await axiosInstanceServer.post('/add_all_servers');
+      const response = await axiosInstanceServer.post('/add_all_servers', { 'dummy_data': 0 });
       if (response.status === 200) {
         message.success('All servers added successfully!');
         fetchServerInstances();
@@ -384,7 +392,7 @@ const ServerControl = () => {
 
   const handleRemoveAllServers = async () => {
     try {
-      const response = await axiosInstanceServer.post('/remove_all_servers');
+      const response = await axiosInstanceServer.post('/remove_all_servers', { 'dummy_data': 0 });
       if (response.status === 200) {
         message.success('All servers removed successfully!');
         fetchServerInstances();
@@ -397,7 +405,7 @@ const ServerControl = () => {
 
   const handleAddServer = async () => {
     try {
-      const response = await axiosInstanceServer.post('/add_servers/1');
+      const response = await axiosInstanceServer.post('/add_servers/1', { 'dummy_data': 0 });
       if (response.status === 200) {
         message.success('Server added successfully!');
         fetchServerInstances(); // Call fetchServerInstances again
@@ -410,7 +418,7 @@ const ServerControl = () => {
 
   const handleRemoveServer = async () => {
     try {
-      const response = await axiosInstanceServer.post('/remove_servers/1');
+      const response = await axiosInstanceServer.post('/remove_servers/1', { 'dummy_data': 0 });
       if (response.status === 200) {
         message.success('Server removed successfully!');
         fetchServerInstances(); // Call fetchServerInstances again
