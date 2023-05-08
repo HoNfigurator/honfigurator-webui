@@ -1,6 +1,6 @@
 // Home.js
 import React, { useState, useEffect, useContext } from 'react';
-import { Statistic, Row, Col, Progress } from 'antd';
+import { Statistic, Row, Col, Progress, Select, Button, message } from 'antd';
 import SkippedFramesGraphAll from './Visualisations/SkippedFramesGraphAll';
 import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
 import { SelectedServerContext } from './App';
@@ -22,7 +22,9 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
       axiosInstanceServer.get(`/get_num_matches_ingame?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_num_players_ingame?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_skipped_frame_data/all?_t=${Date.now()}`),
-      axiosInstanceServer.get(`/get_cpu_name?_t=${Date.now()}`)
+      axiosInstanceServer.get(`/get_cpu_name?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_current_github_branch?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_all_github_branches?_t=${Date.now()}`)
     ];
 
     const responses = await Promise.allSettled(requests);
@@ -41,7 +43,9 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
       numMatchesInGame: data[9].num_matches_ingame || null,
       numPlayersInGame: data[10].num_players_ingame || null,
       skippedFramesData: data[11] || null,
-      cpuName: data[12].cpu_name || null
+      cpuName: data[12].cpu_name || null,
+      githubBranch: data[13].branch || null,
+      githubAllBranches: data[14].all_branches || null
     };
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -49,9 +53,27 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
   }
 }
 
+
 function Home() {
   const { selectedServerValue, selectedServerPort } = useContext(SelectedServerContext);
   const [stats, setStats] = useState({});
+
+
+  const handleBranchChange = async (branch) => {
+    if (selectedServerValue && selectedServerPort) {
+      try {
+        const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue, selectedServerPort);
+        await axiosInstanceServer.post(`/switch_github_branch/${branch}?_t=${Date.now()}`, {'dummy_data':0});
+        // Update the current branch in the state
+        setStats({ ...stats, githubBranch: branch });
+      } catch (error) {
+        console.error('Error switching branch:', error);
+        if (error.response.data) {
+          message.error(error.response.data)
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     async function fetchInitialStats() {
@@ -82,6 +104,23 @@ function Home() {
         </Col>
         <Col xs={24} md={8}>
           <Statistic title="CPU" value={stats.cpuName ? stats.cpuName.toString() : 'Loading...'} />
+        </Col>
+        <Col xs={24} md={8}>
+          <Statistic title="Github Branch" value=' ' />
+            <Select
+              style={{ marginTop: '-30px', width: 200 }}
+              placeholder="Change Branch"
+              onChange={handleBranchChange}
+              value={stats.githubBranch || undefined} // Set the selected value of the dropdown
+              loading={!stats.githubAllBranches}
+            >
+              {stats.githubAllBranches &&
+                stats.githubAllBranches.map((branch) => (
+                  <Select.Option key={branch} value={branch}>
+                    {branch}
+                  </Select.Option>
+                ))}
+            </Select>
         </Col>
       </Row>
       <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>

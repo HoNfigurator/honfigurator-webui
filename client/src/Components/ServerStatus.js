@@ -179,7 +179,7 @@ function ServerStates() {
                           type="primary"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleServerAction(status.Port, getButtonAction(status.Status));
+                            handleServerAction(status.Port || status["Local Game Port"], getButtonAction(status.Status));
                           }}
                           style={{ height: '24px', padding: '0 10px', backgroundColor: getButtonColor(status.Status) }}
                         >
@@ -191,7 +191,7 @@ function ServerStates() {
                 >
                   <Card bordered={false} bodyStyle={{ padding: '10px' }}>
                     {Object.entries(status).map(([k, v]) => (
-                      <StatusDetail key={k} label={k} data={v} port={status.Port} />
+                      <StatusDetail key={k} label={k} data={v} port={status.Port || status["Local Game Port"]} />
                     ))}
                   </Card>
                 </Collapse.Panel>

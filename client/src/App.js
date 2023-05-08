@@ -55,30 +55,6 @@ function AppContent() {
     (option) => option.value === selectedServerValue
   )?.status;
 
-  useEffect(() => {
-    if (serverOptions.length > 0) {
-      const lastSelectedServer = localStorage.getItem("lastSelectedServer");
-      const [lastSelectedServerAddress, lastSelectedServerPort] = lastSelectedServer.split(':');
-      const previousSelectedServer = serverOptions.find(
-        (option) => option.value === lastSelectedServerAddress && option.port === parseInt(lastSelectedServerPort)
-      );
-      if (previousSelectedServer) {
-        setSelectedServerLabel(previousSelectedServer.label);
-        setSelectedServerValue(previousSelectedServer.value);
-        setSelectedServerPort(previousSelectedServer.port);
-      } else {
-        setSelectedServerLabel(serverOptions[0].label);
-        setSelectedServerValue(serverOptions[0].value);
-        setSelectedServerPort(serverOptions[0].port);
-      }
-    } else {
-      setSelectedServerLabel("");
-      setSelectedServerValue("");
-      setSelectedServerPort("");
-    }
-  }, [serverOptions]);
-
-
   const [addServerModalVisible, setAddServerModalVisible] = useState(false);
   const [editServerModalVisible, setEditServerModalVisible] = useState(false);
   const [serverToEdit, setServerToEdit] = useState(null);
@@ -125,9 +101,32 @@ function AppContent() {
   useEffect(() => {
     if (authenticated) {
       fetchUserInfoDiscord();
-      if (!userSelected && serverOptions.length > 0) {
-        setSelectedServerLabel(serverOptions[0].label);
-        setSelectedServerValue(serverOptions[0].value);
+
+      if (serverOptions.length > 0) {
+        const lastSelectedServer = localStorage.getItem("lastSelectedServer");
+        if (lastSelectedServer) {
+          const [lastSelectedServerAddress, lastSelectedServerPort] = lastSelectedServer.split(':');
+          const previousSelectedServer = serverOptions.find(
+            (option) => option.value === lastSelectedServerAddress && option.port === parseInt(lastSelectedServerPort)
+          );
+          if (previousSelectedServer) {
+            setSelectedServerLabel(previousSelectedServer.label);
+            setSelectedServerValue(previousSelectedServer.value);
+            setSelectedServerPort(previousSelectedServer.port);
+          } else {
+            setSelectedServerLabel(serverOptions[0].label);
+            setSelectedServerValue(serverOptions[0].value);
+            setSelectedServerPort(serverOptions[0].port);
+          }
+        } else {
+          setSelectedServerLabel(serverOptions[0].label);
+          setSelectedServerValue(serverOptions[0].value);
+          setSelectedServerPort(serverOptions[0].port);
+        }
+      } else {
+        setSelectedServerLabel("");
+        setSelectedServerValue("");
+        setSelectedServerPort("");
       }
       if (selectedServerValue && selectedServerStatus === "OK") {
         // setLoadingServerData(true);
@@ -136,15 +135,14 @@ function AppContent() {
         setLoadingServerData(false);
       }
     }
-  }, [authenticated, userSelected, selectedServerValue, selectedServerStatus]);
+  }, [authenticated, userSelected, selectedServerValue, selectedServerStatus, serverOptions]);
 
-
-  const handleServerChange = (value) => {
-    const selected = serverOptions.find((option) => option.value === value);
+  const handleServerChange = (label) => {
+    const selected = serverOptions.find((option) => option.label === label);
     if (selected) {
       setLoadingServerData(true);
       setSelectedServerLabel(selected.label);
-      setSelectedServerValue(value);
+      setSelectedServerValue(selected.value);
       setSelectedServerPort(selected.port);
       setUserSelected(true);
       localStorage.setItem('lastSelectedServer', `${selected.value}:${selected.port}`);
@@ -160,7 +158,7 @@ function AppContent() {
       {serverOptions.map((option, index) => (
         <Menu.Item
           key={index}
-          onClick={() => handleServerChange(option.value)} // Move the onClick event here
+          onClick={() => handleServerChange(option.label)} // Move the onClick event here
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div

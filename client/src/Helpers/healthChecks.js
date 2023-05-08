@@ -5,7 +5,7 @@ export const performTCPCheck = async (address, port) => {
     // console.log(`pinging ${address}`);
     const axiosInstanceServer = createAxiosInstanceServer(address, port);
     // Set a timeout (in milliseconds) for the request
-    const TIMEOUT = 5000; // 3 seconds
+    const TIMEOUT = 10000; // 10 seconds
     const response = await axiosInstanceServer.get(`/ping?_t=${Date.now()}`, {
       timeout: TIMEOUT,
     });

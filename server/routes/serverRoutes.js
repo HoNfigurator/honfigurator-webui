@@ -185,6 +185,8 @@ router.get('/get_instances_status', addAccessToken, createProxyHandler('/api/get
 router.get('/get_global_config', addAccessToken, createProxyHandler('/api/get_global_config', 'get'));
 router.get('/get_skipped_frame_data/:port', addAccessToken, createProxyHandlerWithParams('/api/get_skipped_frame_data/:port', 'get'));
 router.get('/get_cpu_name', addAccessToken, createProxyHandlerWithParams('/api/get_cpu_name', 'get'));
+router.get('/get_current_github_branch', addAccessToken, createProxyHandlerWithParams('/api/get_current_github_branch', 'get'));
+router.get('/get_all_github_branches', addAccessToken, createProxyHandlerWithParams('/api/get_all_github_branches', 'get'));
 router.get('/get_honfigurator_log_entries/:num', addAccessToken, createProxyHandlerWithParams('/api/get_honfigurator_log_entries/:num', 'get'));
 router.get(
     '/get_honfigurator_log_file',
@@ -213,5 +215,6 @@ router.post('/remove_servers/:num', addAccessToken, createProxyHandlerWithParams
 router.post('/add_all_servers', addAccessToken, createProxyHandler('/api/add_all_servers', 'post'));
 router.post('/remove_all_servers', addAccessToken, createProxyHandler('/api/remove_all_servers', 'post'));
 router.get('/ping', addAccessToken, createProxyHandler('/api/ping', 'get'));
+router.post('/switch_github_branch/:branch', addAccessToken, createProxyHandlerWithParams('/api/switch_github_branch/:branch', 'post'));
 
 module.exports = router;

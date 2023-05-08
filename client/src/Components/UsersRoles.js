@@ -1,12 +1,12 @@
 // UsersRoles.js
 import React, { useContext } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, Popconfirm, message, Tooltip } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, Popconfirm, message, Tooltip, Alert } from 'antd';
 import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
 import { SelectedServerContext } from '../App';
 
 const { Option } = Select;
 
-function UserTable({ users, defaultUsers, handleEditUser, handleDeleteUser }) {
+function UserTable({ users, defaultUsers, handleEditUser, handleDeleteUser, loading }) {
   const columns = [
     {
       title: 'Name',
@@ -52,11 +52,11 @@ function UserTable({ users, defaultUsers, handleEditUser, handleDeleteUser }) {
   ];
 
   return (
-    <Table columns={columns} dataSource={users.map(user => ({ ...user, key: user.discord_id }))} />
+    <Table columns={columns} dataSource={users.map(user => ({ ...user, key: user.discord_id }))} loading={loading} />
   );
 }
 
-function RoleTable({ roles, defaultRoles, handleEditRole, handleDeleteRole }) {
+function RoleTable({ roles, defaultRoles, handleEditRole, handleDeleteRole, loading }) {
   const columns = [
     {
       title: 'Name',
@@ -98,7 +98,7 @@ function RoleTable({ roles, defaultRoles, handleEditRole, handleDeleteRole }) {
     },
   ];
   return (
-    <Table columns={columns} dataSource={roles.map(role => ({ ...role, key: role.name }))} />
+    <Table columns={columns} dataSource={roles.map(role => ({ ...role, key: role.name }))} loading={loading} />
   );
 }
 
@@ -116,6 +116,11 @@ function UsersandRoles() {
 
   const [userForm] = Form.useForm();
   const [roleForm] = Form.useForm();
+
+  const [userTableLoading, setUserTableLoading] = React.useState(true);
+  const [roleTableLoading, setRoleTableLoading] = React.useState(true);
+
+  const [accessForbidden, setAccessForbidden] = React.useState(false);
 
   // Add this line to get the selected server from context
   // const selectedServer = useContext(SelectedServerContext);
@@ -135,7 +140,7 @@ function UsersandRoles() {
       // console.log(payload);
 
       if (editingUser) {
-        const response = await axiosInstanceServer.post("/users/edit", payload);
+        const response = await axiosInstanceServer.post(`/users/edit?_t=${Date.now()}`, payload);
         // console.log("editing user")
         if (response.status === 201 || response.status === 200) {
           message.success('Edited user successfully.')
@@ -146,7 +151,7 @@ function UsersandRoles() {
         }
       } else {
         // console.log("adding user");
-        const response = await axiosInstanceServer.post('/users/add', payload)
+        const response = await axiosInstanceServer.post(`/users/add?_t=${Date.now()}`, payload)
           .catch((error) => {
             console.log(error);
           });
@@ -177,7 +182,7 @@ function UsersandRoles() {
       };
 
       if (editingRole) {
-        const response = await axiosInstanceServer.post("/roles/edit", payload);
+        const response = await axiosInstanceServer.post(`/roles/edit?_t=${Date.now()}`, payload);
         if (response.status === 201 || response.status === 200) {
           setRoles(roles.map((role) => (role.name === editingRole.name ? response.data : role)));
           setEditingRole(null);
@@ -187,7 +192,7 @@ function UsersandRoles() {
         }
       } else {
         try {
-          const response = await axiosInstanceServer.post('/roles/add', payload);
+          const response = await axiosInstanceServer.post(`/roles/add?_t=${Date.now()}`, payload);
           if (response.status === 201 || response.status === 200) {
             setRoles([...roles, response.data]);
             message.success("Added role successfully.")
@@ -287,20 +292,39 @@ function UsersandRoles() {
 
   React.useEffect(() => {
     async function fetchData() {
-      const usersResult = await axiosInstanceServer.get('/users/all');
-      const rolesResult = await axiosInstanceServer.get('/roles/all');
-      const permissionsResult = await axiosInstanceServer.get('/permissions/all');
-      const defaultUsersResult = await axiosInstanceServer.get('/users/default');
-      const defaultRolesResult = await axiosInstanceServer.get('/roles/default');
+      setUserTableLoading(true);
+      setRoleTableLoading(true);
+      try {
+        const usersResult = await axiosInstanceServer.get('/users/all');
+        const rolesResult = await axiosInstanceServer.get('/roles/all');
+        const permissionsResult = await axiosInstanceServer.get('/permissions/all');
+        const defaultUsersResult = await axiosInstanceServer.get('/users/default');
+        const defaultRolesResult = await axiosInstanceServer.get('/roles/default');
 
-      setDefaultUsers(defaultUsersResult.data);
-      setDefaultRoles(defaultRolesResult.data);
-      setUsers(usersResult.data.filter(user => user.discord_id));
-      setRoles(rolesResult.data);
-      setPermissions(permissionsResult.data);
+        setDefaultUsers(defaultUsersResult.data);
+        setDefaultRoles(defaultRolesResult.data);
+        setUsers(usersResult.data.filter(user => user.discord_id));
+        setRoles(rolesResult.data);
+        setPermissions(permissionsResult.data);
+
+        setAccessForbidden(false);
+      } catch (error) {
+        if (error.response && error.response.status === 403) {
+          setAccessForbidden(true);
+        }
+      } finally {
+        setUserTableLoading(false);
+        setRoleTableLoading(false);
+      }
     }
-    fetchData();
-  }, []);
+    if (!accessForbidden) {
+      fetchData();
+      const interval = setInterval(() => {
+        fetchData();
+      }, 20000);
+      return () => clearInterval(interval);
+    }
+  }, [accessForbidden]);
 
   const discordIdValidator = (rule, value) => {
     if (!value) {
@@ -325,101 +349,111 @@ function UsersandRoles() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Users</h1>
-        <Button onClick={() => setUserModalVisible(true)}>Add User</Button>
-      </div>
-      <UserTable
-        users={users}
-        defaultUsers={defaultUsers}
-        handleEditUser={handleEditUser}
-        handleDeleteUser={handleDeleteUser}
-      />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Roles</h1>
-        <Button onClick={() => setRoleModalVisible(true)}>Add Role</Button>
-      </div>
-      <RoleTable
-        roles={roles}
-        defaultRoles={defaultRoles}
-        handleEditRole={handleEditRole}
-        handleDeleteRole={handleDeleteRole}
-      />
-      <Modal
-        title={editingUser ? 'Edit User' : 'Add User'}
-        visible={userModalVisible}
-        onOk={handleUserOk}
-        onCancel={handleUserCancel}
-        okText={editingUser ? 'Update' : 'Add'}
-        cancelText="Cancel"
-      >
-        <Form form={userForm} layout="vertical">
-          <Form.Item
-            label="Nickname"
-            name="nickname"
-            rules={[{ required: true, message: 'Please enter a nickname' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Discord ID"
-            name="discord_id"
-            rules={[
-              {
-                required: true,
-                validator: discordIdValidator,
-              },
-            ]}
-          >
-            <Input />
-          </Form.Item>
+      {accessForbidden ? (
+        <Alert message="Access denied" type="error" showIcon />
+      ) : (
+        <>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h1>Users</h1>
+              <Button onClick={() => setUserModalVisible(true)}>Add User</Button>
+            </div>
+            <UserTable
+              users={users}
+              defaultUsers={defaultUsers}
+              handleEditUser={handleEditUser}
+              handleDeleteUser={handleDeleteUser}
+              loading={userTableLoading}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h1>Roles</h1>
+              <Button onClick={() => setRoleModalVisible(true)}>Add Role</Button>
+            </div>
+            <RoleTable
+              roles={roles}
+              defaultRoles={defaultRoles}
+              handleEditRole={handleEditRole}
+              handleDeleteRole={handleDeleteRole}
+              loading={roleTableLoading}
+            />
+            <Modal
+              title={editingUser ? 'Edit User' : 'Add User'}
+              visible={userModalVisible}
+              onOk={handleUserOk}
+              onCancel={handleUserCancel}
+              okText={editingUser ? 'Update' : 'Add'}
+              cancelText="Cancel"
+            >
+              <Form form={userForm} layout="vertical">
+                <Form.Item
+                  label="Nickname"
+                  name="nickname"
+                  rules={[{ required: true, message: 'Please enter a nickname' }]}
+                >
+                  <Input />
+                </Form.Item>
+                <Form.Item
+                  label="Discord ID"
+                  name="discord_id"
+                  rules={[
+                    {
+                      required: true,
+                      validator: discordIdValidator,
+                    },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
 
-          <Form.Item
-            label="Roles"
-            name="roles"
-            rules={[{ required: true, message: 'Please select at least one role' }]}
-          >
-            <Select mode="multiple">
-              {roles.map(role => (
-                <Option key={role.id} value={role.name}>
-                  {role.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-      <Modal
-        title={editingRole ? 'Edit Role' : 'Add Role'}
-        visible={roleModalVisible}
-        onOk={handleRoleOk}
-        onCancel={handleRoleCancel}
-        okText={editingRole ? 'Update' : 'Add'}
-        cancelText="Cancel"
-      >
-        <Form form={roleForm} layout="vertical">
-          <Form.Item
-            label="Name"
-            name="name"
-            rules={[{ required: true, message: 'Please enter a name' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Permissions"
-            name="permissions"
-            rules={[{ required: true, message: 'Please select permissions' }]}
-          >
-            <Select mode="multiple">
-              {permissions.map(permission => (
-                <Option key={permission.name} value={permission.name}>
-                  {permission.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
+                <Form.Item
+                  label="Roles"
+                  name="roles"
+                  rules={[{ required: true, message: 'Please select at least one role' }]}
+                >
+                  <Select mode="multiple">
+                    {roles.map(role => (
+                      <Option key={role.id} value={role.name}>
+                        {role.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Form>
+            </Modal>
+            <Modal
+              title={editingRole ? 'Edit Role' : 'Add Role'}
+              visible={roleModalVisible}
+              onOk={handleRoleOk}
+              onCancel={handleRoleCancel}
+              okText={editingRole ? 'Update' : 'Add'}
+              cancelText="Cancel"
+            >
+              <Form form={roleForm} layout="vertical">
+                <Form.Item
+                  label="Name"
+                  name="name"
+                  rules={[{ required: true, message: 'Please enter a name' }]}
+                >
+                  <Input />
+                </Form.Item>
+                <Form.Item
+                  label="Permissions"
+                  name="permissions"
+                  rules={[{ required: true, message: 'Please select permissions' }]}
+                >
+                  <Select mode="multiple">
+                    {permissions.map(permission => (
+                      <Option key={permission.name} value={permission.name}>
+                        {permission.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Form>
+            </Modal>
+          </div>
+        </>
+      )}
     </div>
   );
 }

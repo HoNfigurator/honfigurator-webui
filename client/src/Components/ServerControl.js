@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Table, Collapse, message, Select, Checkbox, InputNumber, Tooltip } from 'antd';
+import { Form, Input, Button, Table, Collapse, message, Select, Checkbox, InputNumber, Tooltip, Spin, Alert } from 'antd';
 import './ServerControl.css';
 import { SelectedServerContext } from '../App';
 import { useContext } from 'react';
@@ -71,6 +71,8 @@ const ServerControl = () => {
   const [totalAllowedServers, setTotalAllowedServers] = useState(0);
 
   const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue, selectedServerPort);
+
+  const [isLoading, setIsLoading] = useState(true);
 
   // fetch global config data from API endpoint
   useEffect(() => {
@@ -271,36 +273,59 @@ const ServerControl = () => {
 
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
+  const [accessForbidden, setAccessForbidden] = useState(false);
+
   // fetch server instances data from API endpoint
   const fetchServerInstances = async () => {
-    const responseInstances = await axiosInstanceServer.get(`/get_instances_status?_t=${Date.now()}`);
-    // console.log('Raw Response Data:', responseInstances.data);
-    const transformedData = Object.entries(responseInstances.data).map(([key, value]) => {
-      return {
-        name: key,
-        ...value,
-      };
-    });
-    // console.log('Server Instances Data:', transformedData);
-    setServerInstances(transformedData);
+    setIsLoading(true);
+    try {
+      const responseInstances = await axiosInstanceServer.get(`/get_instances_status?_t=${Date.now()}`);
+      // console.log('Raw Response Data:', responseInstances.data);
+      const transformedData = Object.entries(responseInstances.data).map(([key, value]) => {
+        // Check if 'Port' key exists in the value, otherwise use 'Public Game Port' key
+        const port = value.hasOwnProperty('Port') ? value['Port'] : value['Public Game Port'];
 
-    // Calculate total configured servers from the response data
-    setTotalConfiguredServers(transformedData.length);
+        return {
+          name: key,
+          Port: port, // Updated to use the 'port' variable
+          ...value,
+        };
+      });
+      // console.log('Server Instances Data:', transformedData);
+      setServerInstances(transformedData);
 
-    const responseAllowed = await axiosInstanceServer.get(`/get_total_allowed_servers`);
-    setTotalAllowedServers(responseAllowed.data.total_allowed_servers);
+      // Calculate total configured servers from the response data
+      setTotalConfiguredServers(transformedData.length);
+
+      const responseAllowed = await axiosInstanceServer.get(`/get_total_allowed_servers?_t=${Date.now()}`);
+      setTotalAllowedServers(responseAllowed.data.total_allowed_servers);
+      setIsLoading(false);
+    } catch (error) {
+      console.error(error);
+      if (error.response && error.response.status === 403) {
+        setAccessForbidden(true);
+      } else {
+        message.error('Failed to fetch server instances.');
+      }
+      setIsLoading(false);
+    }
   };
 
+
   useEffect(() => {
+    if (accessForbidden) {
+      return;
+    }
+
     const intervalId = setInterval(() => {
       fetchServerInstances();
-    }, 10000); // Run fetchServerInstances every 5000 milliseconds (5 seconds)
+    }, 10000); // Run fetchServerInstances every 10000 milliseconds (10 seconds)
 
     // Clean up the interval when the component unmounts
     return () => {
       clearInterval(intervalId);
     };
-  }, []);
+  }, [accessForbidden]);
 
 
   const updateHonData = async () => {
@@ -379,7 +404,7 @@ const ServerControl = () => {
 
   const handleAddAllServers = async () => {
     try {
-      const response = await axiosInstanceServer.post('/add_all_servers', { 'dummy_data': 0 });
+      const response = await axiosInstanceServer.post(`/add_all_servers?_t=${Date.now()}`, { 'dummy_data': 0 });
       if (response.status === 200) {
         message.success('All servers added successfully!');
         fetchServerInstances();
@@ -392,7 +417,7 @@ const ServerControl = () => {
 
   const handleRemoveAllServers = async () => {
     try {
-      const response = await axiosInstanceServer.post('/remove_all_servers', { 'dummy_data': 0 });
+      const response = await axiosInstanceServer.post(`/remove_all_servers?_t=${Date.now()}`, { 'dummy_data': 0 });
       if (response.status === 200) {
         message.success('All servers removed successfully!');
         fetchServerInstances();
@@ -405,7 +430,7 @@ const ServerControl = () => {
 
   const handleAddServer = async () => {
     try {
-      const response = await axiosInstanceServer.post('/add_servers/1', { 'dummy_data': 0 });
+      const response = await axiosInstanceServer.post(`/add_servers/1?_t=${Date.now()}`, { 'dummy_data': 0 });
       if (response.status === 200) {
         message.success('Server added successfully!');
         fetchServerInstances(); // Call fetchServerInstances again
@@ -418,7 +443,7 @@ const ServerControl = () => {
 
   const handleRemoveServer = async () => {
     try {
-      const response = await axiosInstanceServer.post('/remove_servers/1', { 'dummy_data': 0 });
+      const response = await axiosInstanceServer.post(`/remove_servers/1?_t=${Date.now()}`, { 'dummy_data': 0 });
       if (response.status === 200) {
         message.success('Server removed successfully!');
         fetchServerInstances(); // Call fetchServerInstances again
@@ -436,14 +461,19 @@ const ServerControl = () => {
       key: 'name',
     },
     {
-      title: 'ID',
-      dataIndex: 'ID',
-      key: 'ID',
-    },
-    {
-      title: 'Port',
+      title: 'Public Game Port',
       dataIndex: 'Port',
       key: 'Port',
+    },
+    {
+      title: 'Public Voice Port',
+      dataIndex: 'Public Voice Port',
+      key: 'Public Voice Port',
+    },
+    {
+      title: 'Proxy',
+      dataIndex: 'Proxy Enabled',
+      key: 'Proxy Enabled',
     },
     {
       title: 'Status',
@@ -455,90 +485,99 @@ const ServerControl = () => {
 
   return (
     <div>
-      <h1>Global Config Settings - HoN Data</h1>
-      <Collapse>
-        <Panel header="HoN Data Configuration" key="1">
-          <form onSubmit={handleSaveConfig}>{honDataFormItems}</form>
-          <Button
-            type="primary"
-            style={{ marginRight: '10px' }}
-            onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-          >
-            {showAdvancedSettings ? "Hide Advanced Settings" : "Show Advanced Settings"}
-          </Button>
-          {showAdvancedSettings && (
-            <div>
-              <h2>Advanced Settings</h2>
-              <form>{advancedSettingsItems}</form>
+      {accessForbidden ? (
+        <Alert message="Access denied" type="error" showIcon />
+      ) : (
+        <>
+          <div>
+            <h1>Global Config Settings - HoN Data</h1>
+            <Collapse>
+              <Panel header="HoN Data Configuration" key="1">
+                <form onSubmit={handleSaveConfig}>{honDataFormItems}</form>
+                <Button
+                  type="primary"
+                  style={{ marginRight: '10px' }}
+                  onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                >
+                  {showAdvancedSettings ? "Hide Advanced Settings" : "Show Advanced Settings"}
+                </Button>
+                {showAdvancedSettings && (
+                  <div>
+                    <h2>Advanced Settings</h2>
+                    <form>{advancedSettingsItems}</form>
+                  </div>
+                )}
+                <Button type="primary" htmlType="submit" onClick={handleSaveConfig}>
+                  Save Config
+                </Button>
+              </Panel>
+            </Collapse>
+            <h1>Server Management</h1>
+            <div style={{ marginBottom: '10px' }}>
+              <Button
+                type="primary"
+                onClick={() => {
+                  handleAddServer();
+                }}
+                disabled={totalConfiguredServers >= totalAllowedServers}
+                style={{ marginRight: '10px' }}
+              >
+                Add a server
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => {
+                  handleAddAllServers();
+                }}
+                disabled={totalConfiguredServers >= totalAllowedServers}
+                style={{ marginRight: '10px' }}
+              >
+                Add all servers
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => {
+                  handleRemoveServer();
+                }}
+                disabled={totalConfiguredServers <= 0}
+                danger // Make button red
+                style={{ marginRight: '10px' }}
+              >
+                Remove a server
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => {
+                  handleRemoveAllServers();
+                }}
+                disabled={totalConfiguredServers <= 0}
+                danger // Make button red
+              >
+                Remove all servers
+              </Button>
             </div>
-          )}
-          <Button type="primary" htmlType="submit" onClick={handleSaveConfig}>
-            Save Config
-          </Button>
-        </Panel>
-      </Collapse>
-      <h1>Server Management</h1>
-      <div style={{ marginBottom: '10px' }}>
-        <Button
-          type="primary"
-          onClick={() => {
-            handleAddServer();
-          }}
-          disabled={totalConfiguredServers >= totalAllowedServers}
-          style={{ marginRight: '10px' }}
-        >
-          Add a server
-        </Button>
-        <Button
-          type="primary"
-          onClick={() => {
-            handleAddAllServers();
-          }}
-          disabled={totalConfiguredServers >= totalAllowedServers}
-          style={{ marginRight: '10px' }}
-        >
-          Add all servers
-        </Button>
-        <Button
-          type="primary"
-          onClick={() => {
-            handleRemoveServer();
-          }}
-          disabled={totalConfiguredServers <= 0}
-          danger // Make button red
-          style={{ marginRight: '10px' }}
-        >
-          Remove a server
-        </Button>
-        <Button
-          type="primary"
-          onClick={() => {
-            handleRemoveAllServers();
-          }}
-          disabled={totalConfiguredServers <= 0}
-          danger // Make button red
-        >
-          Remove all servers
-        </Button>
-      </div>
-      <Table
-        dataSource={serverInstances}
-        columns={columns}
-        rowKey={(record) => (record ? record.name + record.Port : 'default')}
-        rowClassName={(record) =>
-          record['Marked for Deletion'] === 'Yes' ? 'highlighted-row' : ''
-        }
-        footer={() => (
-          <>
-            <div>
-              Configured Servers: {totalConfiguredServers} / {totalAllowedServers}
-            </div>
-          </>
-        )}
-      />
+            <Spin spinning={isLoading}>
+              <Table
+                dataSource={serverInstances}
+                columns={columns}
+                rowKey={(record) => (record ? record.name + record.Port : 'default')}
+                rowClassName={(record) =>
+                  record['Marked for Deletion'] === 'Yes' ? 'highlighted-row' : ''
+                }
+                footer={() => (
+                  <>
+                    <div>
+                      Configured Servers: {totalConfiguredServers} / {totalAllowedServers}
+                    </div>
+                  </>
+                )}
+              />
+            </Spin>
+          </div>
+        </>
+      )}
     </div>
   );
-
 };
 
 export default ServerControl;

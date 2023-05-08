@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { Typography, Select, Collapse, Button } from 'antd';
+import { Typography, Select, Collapse, Button, Alert } from 'antd';
 import { SelectedServerContext } from '../App';
 import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
@@ -60,6 +60,9 @@ const LogViewer = () => {
     const [loading, setLoading] = useState(true);
     const [selectedLogLevel, setSelectedLogLevel] = useState('ALL');
 
+    const [error, setError] = useState(null); // Add this line to define the error state
+    const [accessDenied, setAccessDenied] = useState(false); // Define the accessDenied state
+
     const { selectedServerValue, selectedServerPort } = useContext(SelectedServerContext);
     // console.log(selectedServerValue);
     // console.log(selectedServerPort);
@@ -102,15 +105,23 @@ const LogViewer = () => {
         setLoading(true);
         try {
             const response = await axiosInstanceServer.get('/get_honfigurator_log_entries/500');
-            if (response.data && Array.isArray(response.data)) { // check if response.data is an array
+            if (response.data && Array.isArray(response.data)) {
                 const newLogs = response.data.map((line, index) => ({
                     id: `log-${index}`,
                     content: line,
                 }));
+                setError(null); // Reset the error state on successful response
+                setAccessDenied(false); // Reset the accessDenied state on successful response
                 return newLogs;
             }
         } catch (error) {
             console.error('Error fetching logs:', error);
+            if (error.response && error.response.status === 403) {
+                setError('Access to the logs is forbidden.'); // Update error state with custom message
+                setAccessDenied(true); // Update accessDenied state
+            } else {
+                setError('Error fetching logs.'); // Update error state with generic error message
+            }
         } finally {
             setLoading(false);
         }
@@ -147,11 +158,13 @@ const LogViewer = () => {
         };
 
         const updateLogs = async () => {
-            const newLogs = await fetchLogs();
-            if (newLogs && JSON.stringify(logsRef.current) !== JSON.stringify(newLogs)) {
-                setLogs(newLogs);
-                logsRef.current = newLogs;
-                setLogLevelCounts(countLogLevels()); // Update log level counts after updating logs
+            if (!accessDenied) {
+                const newLogs = await fetchLogs();
+                if (newLogs && JSON.stringify(logsRef.current) !== JSON.stringify(newLogs)) {
+                    setLogs(newLogs);
+                    logsRef.current = newLogs;
+                    setLogLevelCounts(countLogLevels()); // Update log level counts after updating logs
+                }
             }
         };
 
@@ -161,7 +174,7 @@ const LogViewer = () => {
         }, 30000); // Fetch logs every 30 seconds, adjust as needed
 
         return () => clearInterval(intervalId);
-    }, []); // Removed 'logs' from dependency array
+    }, [accessDenied]); // Add 'accessDenied' to the dependency array
 
 
 
@@ -253,22 +266,23 @@ const LogViewer = () => {
     const { Panel } = Collapse;
 
     const renderLogs = () => {
-        // if (loading) {
-        //     return <Paragraph>Loading logs...</Paragraph>;
-        // }
-        return (
-            <Collapse defaultActiveKey={['today']}>
-                <Panel header="Today" key="today">
-                    {renderSection('Today', logComponents.today)}
-                </Panel>
-                <Panel header="Yesterday" key="yesterday">
-                    {renderSection('Yesterday', logComponents.yesterday)}
-                </Panel>
-                <Panel header="Older" key="older">
-                    {renderSection('Older', logComponents.older)}
-                </Panel>
-            </Collapse>
-        );
+        if (error) {
+            return <Alert message={error} type="error" />;
+        } else {
+            return (
+                <Collapse defaultActiveKey={['today']}>
+                    <Panel header="Today" key="today">
+                        {renderSection('Today', logComponents.today)}
+                    </Panel>
+                    <Panel header="Yesterday" key="yesterday">
+                        {renderSection('Yesterday', logComponents.yesterday)}
+                    </Panel>
+                    <Panel header="Older" key="older">
+                        {renderSection('Older', logComponents.older)}
+                    </Panel>
+                </Collapse>
+            );
+        }
     };
 
     const handleLogLevelChange = (value) => {
