@@ -1,6 +1,6 @@
 // Home.js
 import React, { useState, useEffect, useContext } from 'react';
-import { Statistic, Row, Col, Progress, Select, Button, message } from 'antd';
+import { Statistic, Row, Col, Progress, Select, Button, message, Modal } from 'antd';
 import SkippedFramesGraphAll from './Visualisations/SkippedFramesGraphAll';
 import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
 import { SelectedServerContext } from './App';
@@ -24,7 +24,8 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
       axiosInstanceServer.get(`/get_skipped_frame_data/all?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_cpu_name?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_current_github_branch?_t=${Date.now()}`),
-      axiosInstanceServer.get(`/get_all_github_branches?_t=${Date.now()}`)
+      axiosInstanceServer.get(`/get_all_github_branches?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_all_public_ports?_t=${Date.now()}`)
     ];
 
     const responses = await Promise.allSettled(requests);
@@ -45,7 +46,12 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
       skippedFramesData: data[11] || null,
       cpuName: data[12].cpu_name || null,
       githubBranch: data[13].branch || null,
-      githubAllBranches: data[14].all_branches || null
+      githubAllBranches: data[14].all_branches || null,
+      publicPorts: {
+        autoping: data[15].autoping_listener || null,
+        game: data[15].public_game_ports || [],
+        voice: data[15].public_voice_ports || [],
+      },
     };
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -61,17 +67,26 @@ function Home() {
 
   const handleBranchChange = async (branch) => {
     if (selectedServerValue && selectedServerPort) {
-      try {
-        const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue, selectedServerPort);
-        await axiosInstanceServer.post(`/switch_github_branch/${branch}?_t=${Date.now()}`, {'dummy_data':0});
-        // Update the current branch in the state
-        setStats({ ...stats, githubBranch: branch });
-      } catch (error) {
-        console.error('Error switching branch:', error);
-        if (error.response.data) {
-          message.error(error.response.data)
-        }
-      }
+      Modal.confirm({
+        title: 'Switch GitHub Branch',
+        content: `This will cause HoNfigurator on your server to restart using the selected GitHub branch: ${branch}. Only do this if you know what you are doing.`,
+        onOk: async () => {
+          try {
+            const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue, selectedServerPort);
+            await axiosInstanceServer.post(`/switch_github_branch/${branch}?_t=${Date.now()}`, { 'dummy_data': 0 });
+            // Update the current branch in the state
+            setStats({ ...stats, githubBranch: branch });
+          } catch (error) {
+            console.error('Error switching branch:', error);
+            if (error.response.data) {
+              message.error(error.response.data)
+            }
+          }
+        },
+        onCancel() {
+          console.log('Switch branch cancelled');
+        },
+      });
     }
   };
 
@@ -80,6 +95,7 @@ function Home() {
       if (selectedServerValue && selectedServerPort) {
         const initialStats = await fetchStats(selectedServerValue, selectedServerPort);
         setStats(initialStats);
+        setPublicPorts(initialStats.publicPorts);
       }
     }
 
@@ -107,20 +123,20 @@ function Home() {
         </Col>
         <Col xs={24} md={8}>
           <Statistic title="Github Branch" value=' ' />
-            <Select
-              style={{ marginTop: '-30px', width: 200 }}
-              placeholder="Change Branch"
-              onChange={handleBranchChange}
-              value={stats.githubBranch || undefined} // Set the selected value of the dropdown
-              loading={!stats.githubAllBranches}
-            >
-              {stats.githubAllBranches &&
-                stats.githubAllBranches.map((branch) => (
-                  <Select.Option key={branch} value={branch}>
-                    {branch}
-                  </Select.Option>
-                ))}
-            </Select>
+          <Select
+            style={{ marginTop: '-30px', width: 200 }}
+            placeholder="Change Branch"
+            onChange={handleBranchChange}
+            value={stats.githubBranch || undefined} // Set the selected value of the dropdown
+            loading={!stats.githubAllBranches}
+          >
+            {stats.githubAllBranches &&
+              stats.githubAllBranches.map((branch) => (
+                <Select.Option key={branch} value={branch}>
+                  {branch}
+                </Select.Option>
+              ))}
+          </Select>
         </Col>
       </Row>
       <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
@@ -168,6 +184,38 @@ function Home() {
             size={120}
             style={{ marginTop: '-30px' }}
           />
+        </Col>
+        <Col xs={24} md={8}>
+          <Row>
+            <Statistic
+              title="Autoping Port"
+              value={
+                stats.publicPorts?.autoping
+                  ? stats.publicPorts.autoping.toString()
+                  : 'Loading...'
+              }
+            />
+          </Row>
+          <Row>
+            <Statistic
+              title="Public Game Ports"
+              value={
+                stats.publicPorts?.game?.length && stats.publicPorts?.voice?.length
+                  ? `${Math.min(...stats.publicPorts.game)}-${Math.max(...stats.publicPorts.game)}`
+                  : 'Loading...'
+              }
+            />
+          </Row>
+          <Row>
+            <Statistic
+              title="Public Voice Ports"
+              value={
+                stats.publicPorts?.game?.length && stats.publicPorts?.voice?.length
+                  ? `${Math.min(...stats.publicPorts.voice)}-${Math.max(...stats.publicPorts.voice)}`
+                  : 'Loading...'
+              }
+            />
+          </Row>
         </Col>
       </Row>
       <br />

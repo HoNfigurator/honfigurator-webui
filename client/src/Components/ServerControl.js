@@ -235,8 +235,8 @@ const ServerControl = () => {
           return (
             <Form.Item key={key} label={<Tooltip title={tooltipText}>{label}</Tooltip>} valuePropName="checked">
               <Checkbox
-                checked={value === "1"}
-                onChange={(e) => handleInputChange({ target: { value: e.target.checked ? "1" : "0" } }, key)}
+                checked={value === true}
+                onChange={(e) => handleInputChange({ target: { value: e.target.checked ? true : false } }, key)}
               />
             </Form.Item>
           );
