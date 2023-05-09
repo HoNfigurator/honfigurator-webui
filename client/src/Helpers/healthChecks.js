@@ -1,3 +1,4 @@
+// healthChecks.js
 import { createAxiosInstanceServer } from "../Security/axiosRequestFormat";
 
 export const performTCPCheck = async (address, port) => {
@@ -5,14 +6,14 @@ export const performTCPCheck = async (address, port) => {
     // console.log(`pinging ${address}`);
     const axiosInstanceServer = createAxiosInstanceServer(address, port);
     // Set a timeout (in milliseconds) for the request
-    const TIMEOUT = 10000; // 10 seconds
+    const TIMEOUT = 6000; // 3 seconds
     const response = await axiosInstanceServer.get(`/ping?_t=${Date.now()}`, {
       timeout: TIMEOUT,
     });
-    console.log(`${address} ${response.data.status}`)
+    // console.log(`${address} ${response.data.status}`)
     return response;
   } catch (error) {
-    console.error('TCP check error:', error);
+    // console.error('TCP check error:', error);
     if (error.code === "ECONNABORTED") {
       return {
         status: 500,

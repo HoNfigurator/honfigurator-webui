@@ -48,7 +48,7 @@ function AppContent() {
   const [userInfo, setUserInfo] = useState(null);
   const [userRolePermissions, setUserRolePermissions] = useState(null);
 
-  const { serverOptions, serverStatusLoading, firstLoad, getServers } = useServerList();
+  const { serverOptions, serverStatusLoading, firstLoad, getServers, removeServer } = useServerList();
   const [isDropdownMenuOpen, setIsDropdownMenuOpen] = useState(false);
 
   const selectedServerStatus = serverOptions.find(
@@ -139,13 +139,15 @@ function AppContent() {
 
   const handleServerChange = (label) => {
     const selected = serverOptions.find((option) => option.label === label);
+    // console.log(selected);
     if (selected) {
       setLoadingServerData(true);
       setSelectedServerLabel(selected.label);
       setSelectedServerValue(selected.value);
       setSelectedServerPort(selected.port);
-      setUserSelected(true);
       localStorage.setItem('lastSelectedServer', `${selected.value}:${selected.port}`);
+      // Call fetchUserInfoServer directly
+      fetchUserInfoServer();
     }
   };
 
@@ -189,7 +191,7 @@ function AppContent() {
                 danger
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent click event from bubbling up to the Menu.Item
-                  handleRemoveServer(e, option, getServers);
+                  handleRemoveServer(e, option, removeServer);
                 }}
               >
                 Remove
@@ -325,7 +327,7 @@ function AppContent() {
                 ) : (
                   <Routes>
                     <Route
-                      path="/"
+                      index
                       element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? Home : ServerNotConnected} />}
                     />
                     <Route
@@ -361,11 +363,11 @@ function AppContent() {
         <AddServerModal
           visible={addServerModalVisible}
           setVisible={setAddServerModalVisible}
-          onServerAdded={(server) => {
-            setSelectedServerLabel(server.label);
-            setSelectedServerValue(server.value);
-            getServers(server.value);
-          }}
+        // onServerAdded={(server) => {
+        //   setSelectedServerLabel(server.label);
+        //   setSelectedServerValue(server.value);
+        //   setSelectedServerPort(server.port);
+        // }}
         />
         <EditServerModal
           visible={editServerModalVisible}

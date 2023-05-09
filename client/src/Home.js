@@ -1,6 +1,6 @@
 // Home.js
-import React, { useState, useEffect, useContext } from 'react';
-import { Statistic, Row, Col, Progress, Select, Button, message, Modal } from 'antd';
+import React, { useState, useEffect, useContext, } from 'react';
+import { Statistic, Row, Col, Progress, Select, message, Modal } from 'antd';
 import SkippedFramesGraphAll from './Visualisations/SkippedFramesGraphAll';
 import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
 import { SelectedServerContext } from './App';
@@ -59,10 +59,47 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
   }
 }
 
+const GithubBranchSelect = React.memo(({ githubBranch, githubAllBranches, onBranchChange }) => (
+  <Select
+    style={{ marginTop: '-30px', width: 200 }}
+    placeholder="Change Branch"
+    onChange={onBranchChange}
+    value={githubBranch || undefined} // Set the selected value of the dropdown
+    loading={!githubAllBranches}
+  >
+    {githubAllBranches &&
+      githubAllBranches.map((branch) => (
+        <Select.Option key={branch} value={branch}>
+          {branch}
+        </Select.Option>
+      ))}
+  </Select>
+));
+
 
 function Home() {
   const { selectedServerValue, selectedServerPort } = useContext(SelectedServerContext);
-  const [stats, setStats] = useState({});
+  // Separate state variables for each piece of data
+  const [serverIP, setServerIP] = useState(null);
+  const [serverTotalAllowed, setServerTotalAllowed] = useState(null);
+  const [serversTotal, setServersTotal] = useState(null);
+  const [cpusTotal, setCpusTotal] = useState(null);
+  const [cpusReserved, setCpusReserved] = useState(null);
+  const [totalPerCore, setTotalPerCore] = useState(null);
+  const [cpuUsed, setCpuUsed] = useState(null);
+  const [memoryUsed, setMemoryUsed] = useState(null);
+  const [memoryTotal, setMemoryTotal] = useState(null);
+  const [numMatchesInGame, setNumMatchesInGame] = useState(null);
+  const [numPlayersInGame, setNumPlayersInGame] = useState(null);
+  const [skippedFramesData, setSkippedFramesData] = useState(null);
+  const [cpuName, setCpuName] = useState(null);
+  const [githubBranch, setGithubBranch] = useState(null);
+  const [githubAllBranches, setGithubAllBranches] = useState(null);
+  const [publicPorts, setPublicPorts] = useState({
+    autoping: null,
+    game: [],
+    voice: [],
+  });
 
 
   const handleBranchChange = async (branch) => {
@@ -79,75 +116,89 @@ function Home() {
           } catch (error) {
             console.error('Error switching branch:', error);
             if (error.response.data) {
-              message.error(error.response.data)
+              message.error(error.response.data);
+            } else {
+              message.error("Error switching branch for an unknown reason");
             }
           }
         },
         onCancel() {
-          console.log('Switch branch cancelled');
+          
         },
       });
     }
   };
 
+  const [initialValuesSet, setInitialValuesSet] = useState(false);
+
   useEffect(() => {
-    async function fetchInitialStats() {
-      if (selectedServerValue && selectedServerPort) {
-        const initialStats = await fetchStats(selectedServerValue, selectedServerPort);
-        setStats(initialStats);
-        setPublicPorts(initialStats.publicPorts);
-      }
+    if (!initialValuesSet && selectedServerValue && selectedServerPort) {
+      setInitialValuesSet(true);
     }
+    if (initialValuesSet) {
+      async function updateStats() {
+        if (selectedServerValue && selectedServerPort) {
+          const data = await fetchStats(selectedServerValue, selectedServerPort);
 
-    fetchInitialStats();
-    const intervalId = setInterval(async () => {
-      if (selectedServerValue && selectedServerPort) {
-        const updatedStats = await fetchStats(selectedServerValue, selectedServerPort);
-        setStats(updatedStats);
+          // Update individual state variables
+          setServerIP(data.serverIP);
+          setServerTotalAllowed(data.serverTotalAllowed);
+          setServersTotal(data.serversTotal);
+          setCpusTotal(data.cpusTotal);
+          setCpusReserved(data.cpusReserved);
+          setTotalPerCore(data.totalPerCore);
+          setCpuUsed(data.cpuUsed);
+          setMemoryUsed(data.memoryUsed);
+          setMemoryTotal(data.memoryTotal);
+          setNumMatchesInGame(data.numMatchesInGame);
+          setNumPlayersInGame(data.numPlayersInGame);
+          setSkippedFramesData(data.skippedFramesData);
+          setCpuName(data.cpuName);
+          setGithubBranch(data.githubBranch);
+          setGithubAllBranches(data.githubAllBranches);
+          setPublicPorts(data.publicPorts);
+        }
       }
-    }, 5000);
+      // Fetch stats once on load
+      updateStats();
 
-    // Add a cleanup function to clear the interval when the component is unmounted or the server is changed
-    return () => clearInterval(intervalId);
-  }, [selectedServerValue, selectedServerPort]);
+      // Set up the interval to fetch stats every 30 seconds
+      const intervalId = setInterval(updateStats, 30000);
+
+      // Add a cleanup function to clear the interval when the component is unmounted or the server is changed
+      return () => clearInterval(intervalId);
+    }
+  }, [selectedServerValue, selectedServerPort, initialValuesSet]);
+
 
   return (
     <div>
       <h1>Server Statistics</h1>
       <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
         <Col xs={24} md={8}>
-          <Statistic title="Public IP" value={stats.serverIP ? stats.serverIP.toString() : 'Loading...'} />
+          <Statistic title="Public IP" value={serverIP ? serverIP.toString() : 'Loading...'} />
         </Col>
         <Col xs={24} md={8}>
-          <Statistic title="CPU" value={stats.cpuName ? stats.cpuName.toString() : 'Loading...'} />
+          <Statistic title="CPU" value={cpuName ? cpuName.toString() : 'Loading...'} />
         </Col>
         <Col xs={24} md={8}>
           <Statistic title="Github Branch" value=' ' />
-          <Select
-            style={{ marginTop: '-30px', width: 200 }}
-            placeholder="Change Branch"
-            onChange={handleBranchChange}
-            value={stats.githubBranch || undefined} // Set the selected value of the dropdown
-            loading={!stats.githubAllBranches}
-          >
-            {stats.githubAllBranches &&
-              stats.githubAllBranches.map((branch) => (
-                <Select.Option key={branch} value={branch}>
-                  {branch}
-                </Select.Option>
-              ))}
-          </Select>
+          <GithubBranchSelect
+            githubBranch={githubBranch}
+            githubAllBranches={githubAllBranches}
+            onBranchChange={handleBranchChange}
+          />
         </Col>
       </Row>
       <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
         <Col xs={24} md={8}>
-          <Statistic title="Servers Configured" value={`${stats.serversTotal || '0'} / ${stats.serverTotalAllowed ? stats.serverTotalAllowed.toString() : '-'}`} suffix={<span style={{ fontSize: '14px' }}>total</span>} />
+          <Statistic title="Servers Configured" value={`${serversTotal || '0'} / ${serverTotalAllowed ? serverTotalAllowed.toString() : '-'}`} suffix={<span style={{ fontSize: '14px' }}>total</span>} />
         </Col>
         <Col xs={24} md={8}>
-          <Statistic title="Total Logical CPU Cores" value={stats.cpusTotal ? stats.cpusTotal.toString() : '-'} suffix={<span style={{ fontSize: '14px' }}>cores ({stats.cpusReserved ? stats.cpusReserved.toString() : '-'} threads reserved for OS)</span>} />
+          <Statistic title="Total Logical CPU Cores" value={cpusTotal ? cpusTotal.toString() : '-'} suffix={<span style={{ fontSize: '14px' }}>cores ({cpusReserved ? cpusReserved.toString() : '-'} threads reserved for OS)</span>} />
         </Col>
         <Col xs={24} md={8}>
-          <Statistic title="Max Servers per Thread" value={stats.totalPerCore ? stats.totalPerCore.toString() : '-'} />
+          <Statistic title="Max Servers per Thread" value={totalPerCore ? totalPerCore.toString() : '-'} />
         </Col>
       </Row>
       <Row gutter={[16, 16]} style={{ marginBottom: '20px' }}>
@@ -155,12 +206,12 @@ function Home() {
           <Statistic title="Memory Usage" value=' ' />
           <Progress
             type="circle"
-            percent={stats.memoryUsed && stats.memoryTotal ? (stats.memoryUsed / stats.memoryTotal) * 100 : 0}
+            percent={memoryUsed && memoryTotal ? (memoryUsed / memoryTotal) * 100 : 0}
             format={(percent) => {
-              if (typeof stats.memoryUsed === 'number') {
-                return `${stats.memoryUsed.toFixed(2)}GB / ${stats.memoryTotal || '-'}GB`;
+              if (typeof memoryUsed === 'number') {
+                return `${memoryUsed.toFixed(2)}GB / ${memoryTotal || '-'}GB`;
               } else {
-                return `${stats.memoryUsed || '-'} / ${stats.memoryTotal || '-'}GB`;
+                return `${memoryUsed || '-'} / ${memoryTotal || '-'}GB`;
               }
             }}
             strokeColor={{
@@ -175,7 +226,7 @@ function Home() {
           <Statistic title="CPU Load" value=' ' />
           <Progress
             type="circle"
-            percent={typeof stats.cpuUsed === 'number' ? stats.cpuUsed : 0}
+            percent={typeof cpuUsed === 'number' ? cpuUsed : 0}
             format={(percent) => `${Number(percent).toFixed(2)}%`}
             strokeColor={{
               '0%': '#108ee9',
@@ -190,8 +241,8 @@ function Home() {
             <Statistic
               title="Autoping Port"
               value={
-                stats.publicPorts?.autoping
-                  ? stats.publicPorts.autoping.toString()
+                publicPorts?.autoping
+                  ? publicPorts.autoping.toString()
                   : 'Loading...'
               }
             />
@@ -200,8 +251,8 @@ function Home() {
             <Statistic
               title="Public Game Ports"
               value={
-                stats.publicPorts?.game?.length && stats.publicPorts?.voice?.length
-                  ? `${Math.min(...stats.publicPorts.game)}-${Math.max(...stats.publicPorts.game)}`
+                publicPorts?.game?.length && publicPorts?.voice?.length
+                  ? `${Math.min(...publicPorts.game)}-${Math.max(...publicPorts.game)}`
                   : 'Loading...'
               }
             />
@@ -210,8 +261,8 @@ function Home() {
             <Statistic
               title="Public Voice Ports"
               value={
-                stats.publicPorts?.game?.length && stats.publicPorts?.voice?.length
-                  ? `${Math.min(...stats.publicPorts.voice)}-${Math.max(...stats.publicPorts.voice)}`
+                publicPorts?.game?.length && publicPorts?.voice?.length
+                  ? `${Math.min(...publicPorts.voice)}-${Math.max(...publicPorts.voice)}`
                   : 'Loading...'
               }
             />
@@ -222,17 +273,17 @@ function Home() {
       <h1>Match Statistics</h1>
       <Row gutter={[16, 16]} >
         <Col xs={24} md={8}>
-          <Statistic title="Matches in Progress" value={stats.numMatchesInGame || '0'} />
+          <Statistic title="Matches in Progress" value={numMatchesInGame || '0'} />
         </Col>
         <Col xs={24} md={8}>
-          <Statistic title="Players Online" value={stats.numPlayersInGame || '0'} />
+          <Statistic title="Players Online" value={numPlayersInGame || '0'} />
         </Col>
       </Row>
       <br />
       <h1>Skipped Frames</h1>
       <Row gutter={[16, 16]}>
         <Col xs={24}>
-          {stats.skippedFramesData && <SkippedFramesGraphAll data={stats.skippedFramesData} serverNames={Object.keys(stats.skippedFramesData)} />}
+          {skippedFramesData && <SkippedFramesGraphAll data={skippedFramesData} serverNames={Object.keys(skippedFramesData)} />}
         </Col>
       </Row>
     </div>

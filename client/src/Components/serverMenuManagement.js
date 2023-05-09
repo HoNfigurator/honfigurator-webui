@@ -1,3 +1,4 @@
+// serverMenuManagement.js
 import { message } from 'antd';
 import { axiosInstanceUI } from '../Security/axiosRequestFormat';
 
@@ -25,21 +26,24 @@ export const handleEditServer = (event, server, setServerToEdit, setEditServerMo
     setEditServerModalVisible(true);
 };
 
-export const handleRemoveServer = async (event, server, getServers) => {
+export const handleRemoveServer = async (event, server, removeServer) => {
     event.stopPropagation();
-    // console.log("Remove server:", server);
     const payload = {
-        name: server.label
+      name: server.label
     }
     try {
-        await axiosInstanceUI.delete('/user/delete_server', { data: payload });
-        getServers(); // Refresh the server list after deletion
+      const response = await axiosInstanceUI.delete('/user/delete_server', { data: payload });
+      if (response.status === 200) {
+        removeServer(server.label); // Remove the server from the context directly
         message.success(`Server '${server.label}' deleted successfully.`);
-    } catch (error) {
-        console.error('Error deleting server:', error);
+      } else {
         message.error(`Error deleting server '${server.label}'.`);
+      }
+    } catch (error) {
+      console.error('Error deleting server:', error);
+      message.error(`Error deleting server '${server.label}'.`);
     }
-};
+  };
 
 
 export const getServerStatusIndicator = (status) => (

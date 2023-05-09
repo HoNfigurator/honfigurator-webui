@@ -9,7 +9,7 @@ import './ServerStatus.css';
 function ServerStates() {
   const [serverStates, setServerStates] = useState([]);
   const [activeKey, setActiveKey] = useState(null);
-  const {selectedServerValue, selectedServerPort} = useContext(SelectedServerContext);
+  const { selectedServerValue, selectedServerPort } = useContext(SelectedServerContext);
   const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue, selectedServerPort);
 
   const fetchServerStates = async () => {
@@ -17,7 +17,7 @@ function ServerStates() {
     if (response.data) {
       setServerStates(response.data);
     } else {
-      console.log("No servers.")
+      console.log("No servers.");
     }
   };
 
@@ -36,15 +36,15 @@ function ServerStates() {
     if (status === 'Unknown') {
       return '#FF5252'; // Red
     } else if (status === 'Starting') {
-      return '#3f87ba' // Blue
+      return '#3f87ba'; // Blue
     } else if (status === 'Occupied' && scheduled_shutdown === 'No') {
-      return '#d9d029' // Yellow
+      return '#d9d029'; // Yellow
     } else if (status === 'Occupied' && scheduled_shutdown === 'Yes') {
-      return '#fc8c03' // Orange
+      return '#fc8c03'; // Orange
     } else if (status === 'Ready' && scheduled_shutdown === 'Yes') {
-      return '#fc8c03' // Orange
+      return '#fc8c03'; // Orange
     } else if (status === 'Queued') {
-      return '#8e918e' // Greay
+      return '#8e918e'; // Greay
     }
     return '#00C853'; // Green
   };
@@ -53,18 +53,42 @@ function ServerStates() {
     try {
       // Make axios call to appropriate endpoint based on the action
       if (action === 'stop') {
-        await axiosInstanceServer.post(`/stop_server/${port}?_t=${Date.now()}`, {'dummy_data':0});
+        await axiosInstanceServer.post(`/stop_server/${port}?_t=${Date.now()}`, { 'dummy_data': 0 });
         message.success('Server schedule stopped successfully!');
       } else if (action === 'start') {
         // Replace with your actual start server API endpoint
-        await axiosInstanceServer.post(`/start_server/${port}?_t=${Date.now()}`, {'dummy_data':0});
+        await axiosInstanceServer.post(`/start_server/${port}?_t=${Date.now()}`, { 'dummy_data': 0 });
         message.success('Server started successfully!');
       }
 
       // Fetch updated server states after the action is performed
       fetchServerStates();
     } catch (error) {
-      message.error('An error occurred while performing the action. Please try again later.');
+      if (error.response) {
+        if (error.response.status == 401 || error.response.status == 403) {
+          if (action === "stop") {
+            message.error(`You do not have permissions to stop a server.`);
+          } else if (action === "start") {
+            message.error(`You do not have permissions to start a server.`);
+          }
+          console.error(error);
+
+        } else {
+          if (action === "stop") {
+            message.error(`An error occured while attempting to stop the server. [${error.response.status}] ${error.response.data}`)
+          } else if (action === "start") {
+            message.error(`An error occured while attempting to start the server. [${error.response.status}] ${error.response.data}`)
+          }
+          console.error(error);
+        }
+      } else {
+        if (action === "stop") {
+          message.error('Stopping the server failed for an unknown reason.');
+        } else if (action === "start") {
+          message.error('Starting the server failed for an unknown reason.');
+        }
+        console.error(error);
+      }
     }
   };
 

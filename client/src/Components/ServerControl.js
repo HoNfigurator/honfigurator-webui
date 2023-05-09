@@ -19,6 +19,8 @@ const settingsLabels = {
   svr_priority: "Server Priority",
   svr_total_per_core: "Total Servers per Core",
   svr_enableProxy: "Enable Proxy",
+  man_enableProxy: "Enable Proxy",
+  svr_noConsole: "No Console Windows",
   svr_max_start_at_once: "Max Servers Start at Once",
   svr_starting_gamePort: "Starting Game Port",
   svr_starting_voicePort: "Starting Voice Port",
@@ -36,9 +38,11 @@ const settingsTooltips = {
   svr_priority: "Select the server priority",
   svr_total_per_core: "Select the total number of servers per core",
   svr_enableProxy: "Enable or disable the proxy",
-  svr_max_start_at_once: "Maximum number of servers to start at once",
-  svr_starting_gamePort: "Starting port number for game connections",
-  svr_starting_voicePort: "Starting port number for voice connections",
+  man_enableProxy: "Enable or disable the proxy",
+  svr_noConsole: "Run with no console windows. This improves performance, as there are less moving windows.",
+  svr_max_start_at_once: "Maximum number of servers to start at once. This will \"stagger start\". The less servers that start at a time, the less disruption to other running games.",
+  svr_starting_gamePort: "Starting port number for game connections. This is the local port value. If your servers are protected by the proxy, the real public port value will be displayed to the right.",
+  svr_starting_voicePort: "Starting port number for voice connections. This is the local port value. If your servers are protected by the proxy, the real public port value will be displayed to the right.",
 };
 
 const simpleSettingsKeys = [
@@ -56,6 +60,8 @@ const advancedSettingsKeys = [
   "svr_priority",
   "svr_total_per_core",
   "svr_enableProxy",
+  "man_enableProxy",
+  "svr_noConsole",
   "svr_max_start_at_once",
   "svr_starting_gamePort",
   "svr_starting_voicePort",
@@ -240,13 +246,35 @@ const ServerControl = () => {
               />
             </Form.Item>
           );
+        case "man_enableProxy":
+          return (
+            <Form.Item key={key} label={<Tooltip title={tooltipText}>{label}</Tooltip>} valuePropName="checked">
+              <Checkbox
+                checked={value === true}
+                onChange={(e) => handleInputChange({ target: { value: e.target.checked ? true : false } }, key)}
+              />
+            </Form.Item>
+          );
+        case "svr_noConsole":
+          return (
+            <Form.Item key={key} label={<Tooltip title={tooltipText}>{label}</Tooltip>} valuePropName="checked">
+              <Checkbox
+                checked={value === true}
+                onChange={(e) => handleInputChange({ target: { value: e.target.checked ? true : false } }, key)}
+              />
+            </Form.Item>
+          );
         default:
           if (key === 'svr_starting_gamePort' || key === 'svr_starting_voicePort') {
             const { min, max } = getMinMaxValues(key);
             return (
               <Form.Item
                 key={key}
-                label={<Tooltip title={tooltipText}>{label}</Tooltip>}
+                label={
+                  <Tooltip title={tooltipText}>
+                    {label}
+                  </Tooltip>
+                }
               >
                 <InputNumber
                   value={value || ''}
@@ -254,6 +282,11 @@ const ServerControl = () => {
                   max={max}
                   onChange={(val) => handleInputChange({ target: { value: val } }, key, key)}
                 />
+                {globalConfig.hon_data["man_enableProxy"] ? (
+                  <span style={{ marginLeft: 8, color: "rgba(0, 0, 0, 0.45)" }}>
+                    {parseInt(value || 0) + 10000 + " public port. Since the proxy is enabled."}
+                  </span>
+                ) : null}
               </Form.Item>
             );
           } else {
@@ -337,8 +370,18 @@ const ServerControl = () => {
         message.error('Failed to update HoN data.');
       }
     } catch (error) {
-      message.error('Failed to update HoN data.');
-      console.error(error);
+      if (error.response) {
+        if (error.response.status == 401 || error.response.status == 403) {
+          message.error(`You do not have permissions to update the server configuration.`)
+          console.error(error);
+        } else {
+          message.error(`Error saving config. [${error.response.status}] ${error.response.data}`)
+          console.error(error);
+        }
+      } else {
+        message.error('Failed to save config for an unknown reason.')
+        console.error(error);
+      }
     }
   };
 
@@ -387,8 +430,8 @@ const ServerControl = () => {
       return;
     }
     try {
-      const responseCurrent = await axiosInstanceServer.get(`/get_global_config?_t=${Date.now()}`);
-      const dataMatch = deepDictCompare(responseCurrent.data.hon_data, globalConfig.hon_data);
+      // const responseCurrent = await axiosInstanceServer.get(`/get_global_config?_t=${Date.now()}`);
+      // const dataMatch = deepDictCompare(responseCurrent.data.hon_data, globalConfig.hon_data);
       // if (!dataMatch) {
       //   message.error("The data on the server has changed. The page has been refreshed. Please make your changes again.");
       //   setGlobalConfig(responseCurrent.data); // Update the globalConfig state with the fetched data
@@ -396,8 +439,18 @@ const ServerControl = () => {
       // }      
       updateHonData();
     } catch (error) {
-      message.error(`Error saving config. [${error.response.status}] ${error.response.data}`)
-      console.error(error);
+      if (error.response) {
+        if (error.response.status == 401 || error.response.status == 403) {
+          message.error(`You do not have permissions to view the server configuration.`)
+          console.error(error);
+        } else {
+          message.error(`Error viewing the server configuration. [${error.response.status}] ${error.response.data}`)
+          console.error(error);
+        }
+      } else {
+        message.error('Failed to load the server configuration for an unknown reason.')
+        console.error(error);
+      }
     }
   };
 
@@ -410,8 +463,16 @@ const ServerControl = () => {
         fetchServerInstances();
       }
     } catch (error) {
-      message.error('Failed to add all servers.')
-      console.error(error);
+      if (error.response) {
+        if (error.response.status == 401 || error.response.status == 403) {
+          message.error('You do not have permission to add all servers.')
+        } else {
+          message.error(`Failed to add all servers. [${error.response.status}] ${error.response.data}`)
+        }
+      } else {
+        message.error('Failed to add all servers for an unknown reason.')
+        console.error(error);
+      }
     }
   };
 
@@ -423,8 +484,16 @@ const ServerControl = () => {
         fetchServerInstances();
       }
     } catch (error) {
-      message.error('Failed to remove all servers.')
-      console.error(error);
+      if (error.response) {
+        if (error.response.status == 401 || error.response.status == 403) {
+          message.error('You do not have permission to remove all servers.')
+        } else {
+          message.error(`Failed to remove all servers. [${error.response.status}] ${error.response.data}`)
+        }
+      } else {
+        message.error('Failed to remove all servers for an unknown reason.')
+        console.error(error);
+      }
     }
   };
 
@@ -436,8 +505,16 @@ const ServerControl = () => {
         fetchServerInstances(); // Call fetchServerInstances again
       }
     } catch (error) {
-      message.error('Failed to add a server.')
-      console.error(error);
+      if (error.response) {
+        if (error.response.status == 401 || error.response.status == 403) {
+          message.error('You do not have permission to add a server.')
+        } else {
+          message.error(`Failed to add a server. [${error.response.status}] ${error.response.data}`)
+        }
+      } else {
+        message.error('Failed to add a server for an unknown reason.')
+        console.error(error);
+      }
     }
   };
 
@@ -449,8 +526,16 @@ const ServerControl = () => {
         fetchServerInstances(); // Call fetchServerInstances again
       }
     } catch (error) {
-      message.error('Failed to remove a server.')
-      console.error(error);
+      if (error.response) {
+        if (error.response.status == 401 || error.response.status == 403) {
+          message.error('You do not have permission to remove a server.')
+        } else {
+          message.error(`Failed to remove a server. [${error.response.status}] ${error.response.data}`)
+        }
+      } else {
+        message.error('Failed to remove a server for an unknown reason.')
+        console.error(error);
+      }
     }
   };
 

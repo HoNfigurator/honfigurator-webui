@@ -1,12 +1,17 @@
+// addServerModal.js
 import React, { useState } from 'react';
 import { Modal, Form, Input, notification, Row, Col } from 'antd';
 import { axiosInstanceUI } from '../Security/axiosRequestFormat';
 import { performTCPCheck } from '../Helpers/healthChecks';
 import { errorMessage, WarningMessageDenied, WarningMessageTCP } from './Messages';
+import { useServerList } from '../Components/serverListContext';
 
-const AddServerModal = ({ visible, setVisible, onServerAdded }) => {
+
+const AddServerModal = ({ visible, setVisible}) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+
+  const { addServer } = useServerList();
 
   const handleCancel = () => {
     form.resetFields();
@@ -20,7 +25,7 @@ const AddServerModal = ({ visible, setVisible, onServerAdded }) => {
     // console.log(tcpCheckStatusResponse);
 
     if (tcpCheckStatusResponse.status === 200) {
-      addServer(values);
+      addManagedServer(values);
     } else if (tcpCheckStatusResponse.status === 500) {
       Modal.warning({
         title: 'Warning',
@@ -50,13 +55,14 @@ const AddServerModal = ({ visible, setVisible, onServerAdded }) => {
     setLoading(false);
   };
 
-  const addServer = async (values) => {
+  const addManagedServer = async (values) => {
     try {
       const payload = {
         name: values.serverName,
         address: values.serverAddress,
         port: values.serverPort
       }
+      console.log(values);
       const response = await axiosInstanceUI.post('/user/add_server', payload);
 
       if (!response.status === 200) {
@@ -70,12 +76,14 @@ const AddServerModal = ({ visible, setVisible, onServerAdded }) => {
       form.resetFields();
       setVisible(false);
 
+      addServer(values)
+
       // Pass the added server's information to the callback
-      onServerAdded({
-        label: payload.name,
-        value: payload.address,
-        port: payload.port
-      });
+      // onServerAdded({
+      //   label: payload.name,
+      //   value: payload.address,
+      //   port: payload.port
+      // });
 
     } catch (error) {
       notification.error({
