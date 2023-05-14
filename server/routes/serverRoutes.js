@@ -1,3 +1,4 @@
+// serverRoutes.js
 const express = require('express');
 const axios = require('axios');
 const session = require('../db/session');
@@ -205,6 +206,7 @@ router.get(
     Server setters
 */
 router.post('/set_hon_data', addAccessToken, createProxyHandler('/api/set_hon_data', 'post'))
+router.post('/set_app_data', addAccessToken, createProxyHandler('/api/set_app_data', 'post'))
 
 /*
     Server control
