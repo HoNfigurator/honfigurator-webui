@@ -4,7 +4,7 @@ import './ServerControl.css';
 import { SelectedServerContext } from '../App';
 import { useContext } from 'react';
 import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
-import _ from 'lodash';
+import _, { isInteger } from 'lodash';
 import moment from 'moment';
 
 const { Panel } = Collapse;
@@ -107,6 +107,12 @@ const honData = {
   "svr_noConsole": {
     label: "No Console",
     tooltip: "Run with no console windows. This improves performance, as there are less moving windows.",
+    type: "checkbox",
+    section: "Advanced Settings"
+  },
+  "svr_enableBotMatch": {
+    label: "Allow Botmatch",
+    tooltip: "This setting will allow botmatches on your server. Otherwise the server is terminated for botmatch.",
     type: "checkbox",
     section: "Advanced Settings"
   },
@@ -570,7 +576,8 @@ const ServerControl = () => {
       });
       setServerInstances(transformedData);
       setTotalConfiguredServers(transformedData.length);
-      setIsLoading(false);
+      const responseAllowed = await axiosInstanceServer.get(`/get_total_allowed_servers?_t=${Date.now()}`);
+      setTotalAllowedServers(responseAllowed.data.total_allowed_servers);
     } catch (error) {
       console.error(error);
       if (error.response && error.response.status === 403) {
@@ -578,6 +585,7 @@ const ServerControl = () => {
       } else {
         message.error('Failed to fetch server instances.');
       }
+    } finally {
       setIsLoading(false);
     }
   };
@@ -587,6 +595,14 @@ const ServerControl = () => {
       return;
     }
     fetchServerInstances();
+
+    // Run fetchServerInstances every 15 seconds
+    const intervalId = setInterval(fetchServerInstances, 15000);
+
+    // Cleanup the interval on component unmount
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [accessForbidden]); // Run fetchServerInstances only once when the component mounts
 
   const updateHonData = async () => {
