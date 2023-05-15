@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { Typography, Select, Collapse, Button, Alert } from 'antd';
-import { SelectedServerContext } from '../App';
-import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
+import { Select, Collapse, Button, Alert } from 'antd';
+import { SelectedServerContext } from '../../App';
+import { createAxiosInstanceServer } from '../../Security/axiosRequestFormat';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import './LogViewer.css';
 
-const { Title, Paragraph } = Typography;
 const { Option } = Select;
 
 const LogEntry = React.memo(({ logEntry, index }) => {

@@ -7,7 +7,7 @@ import UsersandRoles from './Components/UsersRoles';
 import './App.css';
 import Home from './Home';
 import ServerStatus from './Components/ServerStatus';
-import ServerControl from './Components/ServerControl';
+import ServerControl from './Components/serverControl/ServerControl';
 import RegisterForm from './Security/RegisterForm';
 import LoginForm from './Security/LoginForm';
 import DiscordCallback from './Security/Discord';
@@ -19,7 +19,8 @@ import { axiosInstanceUI, createAxiosInstanceServer } from './Security/axiosRequ
 import EditServerModal from './Forms/editServerModal';
 import { handleEditServer, handleRemoveServer, ServerNotConnected, getServerStatusIndicator } from './Components/serverMenuManagement';
 import handleLogout from './Security/logout';
-import LogViewer from './Components/ServerTroubleshooting';
+// import LogViewer from './Components/troubleshooting/LogViewer';
+import TroubleshootingPage from './Components/troubleshooting/troubleshooting';
 import CustomHeader from './Header';
 
 const { Header, Content, Sider } = Layout;
@@ -344,7 +345,7 @@ function AppContent() {
                     />
                     <Route
                       path="/troubleshooting"
-                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? LogViewer : ServerNotConnected} />}
+                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? TroubleshootingPage : ServerNotConnected} />}
                     />
                     <Route
                       path="/login"

@@ -189,6 +189,7 @@ router.get('/get_cpu_name', addAccessToken, createProxyHandlerWithParams('/api/g
 router.get('/get_current_github_branch', addAccessToken, createProxyHandlerWithParams('/api/get_current_github_branch', 'get'));
 router.get('/get_all_github_branches', addAccessToken, createProxyHandlerWithParams('/api/get_all_github_branches', 'get'));
 router.get('/get_all_public_ports', addAccessToken, createProxyHandlerWithParams('/api/get_all_public_ports', 'get'));
+router.get('/get_tasks_status', addAccessToken, createProxyHandlerWithParams('/api/get_tasks_status', 'get'));
 router.get('/get_honfigurator_log_entries/:num', addAccessToken, createProxyHandlerWithParams('/api/get_honfigurator_log_entries/:num', 'get'));
 router.get(
     '/get_honfigurator_log_file',
