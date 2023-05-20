@@ -25,9 +25,15 @@ export const honData = {
         section: "Basic Settings"
     },
     "svr_login": {
-        label: "Login",
+        label: "HoN Login",
         tooltip: "Enter your HoN username. This MUST be unique per server. Used to authenticate to game services.",
         type: "input",
+        section: "Basic Settings"
+    },
+    "svr_password": {
+        label: "HoN Password",
+        tooltip: "Enter HoN password password. Used to authenticate to game services.",
+        type: "password",
         section: "Basic Settings"
     },
     "svr_location": {
@@ -35,12 +41,6 @@ export const honData = {
         tooltip: "Select the server location (which region is the server in?)",
         type: "select",
         options: ["AU", "BR", "EU", "RU", "SEA", "TH", "USE", "USW", "NEWERTH"],
-        section: "Basic Settings"
-    },
-    "svr_password": {
-        label: "Server Password",
-        tooltip: "Enter HoN password password. Used to authenticate to game services.",
-        type: "password",
         section: "Basic Settings"
     },
     "svr_priority": {
@@ -84,6 +84,18 @@ export const honData = {
     "svr_enableBotMatch": {
         label: "Allow Botmatch",
         tooltip: "This setting will allow botmatches on your server. Otherwise the server is terminated for botmatch.",
+        type: "checkbox",
+        section: "Advanced Settings"
+    },
+    "svr_start_on_launch": {
+        label: "Start Servers on HoNfigurator Startup",
+        tooltip: "Controls whether the servers should startup when HoNfigurator starts up",
+        type: "checkbox",
+        section: "Advanced Settings"
+    },
+    "svr_override_affinity": {
+        label: "Override Server Affinity",
+        tooltip: "IMPORTANT: Unless you have identified issues with affinity, do not enable this setting.",
         type: "checkbox",
         section: "Advanced Settings"
     },

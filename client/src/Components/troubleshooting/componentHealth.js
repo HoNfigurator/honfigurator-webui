@@ -24,7 +24,7 @@ const ComponentHealth = () => {
 
   useEffect(() => {
     fetchTasksStatus();
-    const intervalId = setInterval(fetchTasksStatus, 20000); // Calls fetchTasksStatus every 20 seconds
+    const intervalId = setInterval(fetchTasksStatus, 10000); // Calls fetchTasksStatus every 20 seconds
 
     return () => {
       clearInterval(intervalId); // Clears the interval on component unmount
@@ -58,14 +58,17 @@ const ComponentHealth = () => {
           { text: 'Error', value: 'Error' },  // Add 'Error' to the filter list
         ],
         onFilter: (value, record) => record.status.indexOf(value) === 0,
-        render: (status) => {
+        render: (status, record) => {
           let color = 'default';
+          let time = record.end_time ? ` (${new Date(record.end_time).toLocaleString()})` : '';
           if (status === 'Running') {
             color = 'green';
           } else if (status === 'Done') {
             color = 'blue';
+            status += time;
           } else if (status === 'Error') {
             color = 'red';
+            status += time;
           }
           return <span style={{ color }}>{status}</span>;
         },
@@ -73,7 +76,7 @@ const ComponentHealth = () => {
       {
         title: 'Error',
         dataIndex: 'exception',
-      },
+      }
     ];
 
     return (
@@ -140,7 +143,7 @@ const ComponentHealth = () => {
           status: task.exception ? 'Error' : task.status,  // Change status to 'Error' if an exception exists
         };
       });
-    
+      
       const columns = [
         {
           title: 'Task',
@@ -149,14 +152,17 @@ const ComponentHealth = () => {
         {
           title: 'Status',
           dataIndex: 'status',
-          render: (status) => {
+          render: (status, record) => {
             let color = 'default';
+            let time = record.end_time ? ` (${new Date(record.end_time).toLocaleString()})` : '';
             if (status === 'Running') {
               color = 'green';
             } else if (status === 'Done') {
               color = 'blue';
+              status += time;
             } else if (status === 'Error') {
               color = 'red';
+              status += time;
             }
             return <span style={{ color }}>{status}</span>;
           },
@@ -165,10 +171,12 @@ const ComponentHealth = () => {
           title: 'Error',
           dataIndex: 'exception',
         },
+        // Removed 'Completion Time' column
       ];
-    
-      return <Table dataSource={tasksArray} columns={columns} rowKey={record => record.task} pagination={false} showHeader={false} />;
+      
+      return <Table dataSource={tasksArray} columns={columns} rowKey={record => record.task} pagination={false} showHeader={false} />
     };
+    
 
     return (
       <>

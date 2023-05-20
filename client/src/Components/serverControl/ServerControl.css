@@ -1,3 +1,8 @@
 .highlighted-row {
-    background-color: rgba(255, 0, 0, 0.1);
-  }
+  background-color: rgba(255, 0, 0, 0.1);
+}
+
+.custom-form-item {
+  margin-bottom: 8px;
+  /* Or any value that you think is appropriate */
+}

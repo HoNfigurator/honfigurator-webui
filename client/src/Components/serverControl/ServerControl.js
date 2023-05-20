@@ -187,7 +187,7 @@ const ServerControl = () => {
               // Use a Checkbox
               if (keyData.section === section) {
                 items.push(
-                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>} valuePropName="checked">
+                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>} valuePropName="checked" className="custom-form-item">
                     <Checkbox
                       checked={value || false}
                       onChange={(e) => handleInputChange(e, key, key, dataType, keyData.type)}
@@ -200,7 +200,7 @@ const ServerControl = () => {
               // Use a Select
               if (keyData.section === section && !isDisabled) {
                 items.push(
-                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>}>
+                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>} className="custom-form-item">
                     <Select
                       value={value || ""}
                       onChange={(val) => handleInputChange({ target: { value: val } }, key, key, dataType, keyData.type)}
@@ -221,7 +221,7 @@ const ServerControl = () => {
                 const timeValue = value ? moment(value, 'HH:mm') : null;
 
                 items.push(
-                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>}>
+                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>} className="custom-form-item">
                     <Space>
                       <TimePicker
                         value={timeValue} // Update this line
@@ -244,36 +244,21 @@ const ServerControl = () => {
               // Use a Password
               if (keyData.section === section && !isDisabled) {
                 items.push(
-                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>}>
+                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>} className="custom-form-item">
                     <Input.Password
                       value={value || ""}
                       onChange={(e) => handleInputChange(e, key, key, dataType, keyData.type)}
                     />
-                  </Form.Item>
+                  </Form.Item> // Closing tag should be here
                 );
               }
               break;
-            case "time":
-              // Use a TimePicker
-              if (keyData.section === section && !isDisabled) {
-                items.push(
-                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>}>
-                    <TimePicker
-                      defaultValue={value ? moment(value, 'HH:mm') : null}
-                      format='HH:mm'
-                      disabled={isDisabled}
-                    />
-                  </Form.Item>
-                );
-              }
-              break;
-            // in the "int" case
             case "int":
               // Use a numeric Input
               if (keyData.section === section && !isDisabled) {
                 const { min, max } = getMinMaxValues(key);
                 items.push(
-                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>}>
+                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>} className="custom-form-item">
                     <InputNumber
                       value={value || 0}
                       min={min}
@@ -290,12 +275,11 @@ const ServerControl = () => {
                 );
               }
               break;
-            // in the "path" case
             case "path":
               // Use a path input (if there's a component for this, or else just use an Input)
               if (keyData.section === section && !isDisabled) {
                 items.push(
-                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>}>
+                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>} className="custom-form-item">
                     <Input
                       value={value || ''}
                       onChange={(time) => handleInputChange(time, key, key, dataType, keyData.type)}
@@ -305,13 +289,11 @@ const ServerControl = () => {
                 );
               }
               break;
-
-            // in the default case
             default:
               // Use an Input for all other keys
               if (keyData.section === section && !isDisabled) {
                 items.push(
-                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>}>
+                  <Form.Item key={key} label={<Tooltip title={keyData.tooltip}>{keyData.label}</Tooltip>} className="custom-form-item">
                     <Input
                       value={value || ''}
                       onChange={(time) => handleInputChange(time, key, key, dataType, keyData.type)}
