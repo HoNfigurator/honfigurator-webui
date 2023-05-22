@@ -1,7 +1,7 @@
 // ServerStatus.js
 import React, { useState, useEffect, useContext } from 'react';
 import { Card, Row, Col, Collapse, Button, message } from 'antd';
-import StatusDetail from './StatusDetail';
+import StatusDetail, { tags } from './StatusDetail'; // Don't forget to export tags from StatusDetail.js
 import { createAxiosInstanceServer } from '../Security/axiosRequestFormat';
 import { SelectedServerContext } from '../App';
 import './ServerStatus.css';
@@ -173,56 +173,77 @@ function ServerStates() {
         </div>
       </div>
       <Row gutter={[16, 16]}>
-        {Object.entries(serverStates).map(([key, status]) => (
-          <Col key={key} xs={24} sm={16} md={12} lg={8} xl={4} className="server-card">
-            <div style={{ display: 'flex', marginBottom: '16px' }}>
-              <div
-                style={{
-                  backgroundColor: getStatusColor(status.Status, status["Scheduled Shutdown"]),
-                  width: '8px',
-                  borderRadius: '8px',
-                  marginRight: '0',
-                }}
-              ></div>
-              <Collapse
-                activeKey={activeKey}
-                onChange={(key) => {
-                  setActiveKey(key);
-                }}
-              >
-                <Collapse.Panel
-                  key={key}
-                  header={
-                    <div className="panel-header" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <span style={{ paddingRight: '10px' }}>{key}</span>
-                          <span style={{ paddingRight: '10px', fontSize: '12px', color: '#888888' }}>{getStatusText(status)}</span>
-                        </div>
-                        <Button
-                          type="primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleServerAction(status.Port || status["Local Game Port"], getButtonAction(status.Status));
-                          }}
-                          style={{ height: '24px', padding: '0 10px', backgroundColor: getButtonColor(status.Status) }}
-                        >
-                          {getButtonText(status.Status)}
-                        </Button>
-                      </div>
-                    </div>
-                  }
+        {Object.entries(serverStates).map(([key, status]) => {
+          const tagsData = {};
+          const nonTagsData = {};
+
+          Object.entries(status).forEach(([k, v]) => {
+            if (tags.includes(k)) {
+              tagsData[k] = v;
+            } else {
+              nonTagsData[k] = v;
+            }
+          });
+
+          return (
+            <Col key={key} xs={24} sm={16} md={12} lg={8} xl={6} className="server-card">
+              <div style={{ display: 'flex', marginBottom: '16px' }}>
+                <div
+                  style={{
+                    backgroundColor: getStatusColor(status.Status, status["Scheduled Shutdown"]),
+                    width: '8px',
+                    borderRadius: '8px',
+                    marginRight: '0',
+                  }}
+                ></div>
+                <Collapse
+                  activeKey={activeKey}
+                  onChange={(key) => {
+                    setActiveKey(key);
+                  }}
                 >
-                  <Card bordered={false} bodyStyle={{ padding: '10px' }}>
-                    {Object.entries(status).map(([k, v]) => (
-                      <StatusDetail key={k} label={k} data={v} port={status.Port || status["Local Game Port"]} />
-                    ))}
-                  </Card>
-                </Collapse.Panel>
-              </Collapse>
-            </div>
-          </Col>
-        ))}
+                  <Collapse.Panel
+                    key={key}
+                    header={
+                      <div className="panel-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'start' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', overflowX: 'auto', marginBottom: '-10px' }}>
+                          {Object.entries(tagsData).map(([k, v]) => (
+                            <StatusDetail key={k} label={k} data={v} port={status.Port || status["Local Game Port"]} status={status} style={{ flex: '0 0 auto', paddingRight: '2px', fontSize: '10px' }} />
+
+                          ))}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <div>
+                            <span style={{ paddingRight: '10px' }}>{key}</span>
+                            <span style={{ paddingRight: '10px', fontSize: '12px', color: '#888888' }}>{getStatusText(status)}</span>
+                          </div>
+                          <Button
+                            type="primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleServerAction(status.Port || status["Local Game Port"], getButtonAction(status.Status));
+                            }}
+                            style={{ height: '24px', padding: '0 10px', backgroundColor: getButtonColor(status.Status) }}
+                          >
+                            {getButtonText(status.Status)}
+                          </Button>
+                        </div>
+                      </div>
+                    }
+                  >
+                    <Card bordered={false} bodyStyle={{ padding: '10px' }}>
+                      {Object.entries(nonTagsData).map(([k, v]) => (
+                        <StatusDetail key={k} label={k} data={v} port={status.Port || status["Local Game Port"]} />
+                      ))}
+                    </Card>
+                  </Collapse.Panel>
+
+
+                </Collapse>
+              </div>
+            </Col>
+          );
+        })}
       </Row>
     </div>
   );

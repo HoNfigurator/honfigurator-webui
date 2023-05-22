@@ -1,10 +1,21 @@
 /* StatusDetail.module.css */
 .status-detail {
   display: flex;
-  justify-content: flex-end;
-  align-items: flex-start;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 8px; /* Adjust the margin-bottom value as needed */
+}
+
+.tag {
+  margin-right: 8px; /* Adjust the margin-right value as needed */
+  margin-bottom: 8px; /* Adjust the margin-bottom value as needed */
+}
 .region-tag,
 .port-tag {
   position: absolute;

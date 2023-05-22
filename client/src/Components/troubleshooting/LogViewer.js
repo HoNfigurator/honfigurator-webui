@@ -58,6 +58,7 @@ const LogViewer = () => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedLogLevel, setSelectedLogLevel] = useState('ALL');
+    const [selectedClass, setSelectedClass] = useState('All Components');
 
     const [error, setError] = useState(null); // Add this line to define the error state
     const [accessDenied, setAccessDenied] = useState(false); // Define the accessDenied state
@@ -109,6 +110,18 @@ const LogViewer = () => {
                     id: `log-${index}`,
                     content: line,
                 }));
+
+                // Extract available classes from log entries
+                const classes = newLogs.reduce((acc, logEntry) => {
+                    const classRegex = / - (\w+)\.py:/;
+                    const matchesClass = logEntry.content.match(classRegex);
+                    if (matchesClass && !acc.includes(matchesClass[1])) {
+                        return [...acc, matchesClass[1]];
+                    }
+                    return acc;
+                }, []);
+
+                setAvailableClasses(['All Components', ...classes]);
                 setError(null); // Reset the error state on successful response
                 setAccessDenied(false); // Reset the accessDenied state on successful response
                 return newLogs;
@@ -128,6 +141,7 @@ const LogViewer = () => {
     };
 
     const [logLevelCounts, setLogLevelCounts] = useState({});
+    const [availableClasses, setAvailableClasses] = useState([]);
 
     const logsRef = useRef(logs);
 
@@ -214,6 +228,7 @@ const LogViewer = () => {
 
         const timestampRegex = /^(\d{4}-\d{2}-\d{2}) \d{2}:\d{2}:\d{2},\d{3}/;
         const logLevelRegex = / - (INFO|WARNING|ERROR|EXCEPTION|FATAL|DEBUG) - /;
+        const classRegex = / - (\w+)\.py:/;
 
         const sections = {
             today: [],
@@ -228,6 +243,9 @@ const LogViewer = () => {
             const log = logEntry.content;
             const matchesTimestamp = log.match(timestampRegex);
             const matchesLogLevel = log.match(logLevelRegex);
+            const matchesClass = log.match(classRegex);
+            const selectedClassFilter =
+                selectedClass === 'All Components' || (matchesClass && matchesClass[1] === selectedClass);
 
             if (matchesTimestamp) {
                 if (matchesTimestamp[1] === todayStr) {
@@ -241,15 +259,14 @@ const LogViewer = () => {
 
             if (
                 matchesLogLevel &&
+                selectedClassFilter &&
                 (selectedLogLevel === 'ALL' || matchesLogLevel[1] === selectedLogLevel)
             ) {
                 if (timestampRegex.test(log)) {
                     entryIndex += 1;
                 }
 
-                const logComponent = (
-                    <LogEntry key={logEntry.id} logEntry={logEntry} index={index} />
-                );
+                const logComponent = <LogEntry key={logEntry.id} logEntry={logEntry} index={index} />;
 
                 sections[currentSection].push(logComponent);
             } else if (!matchesTimestamp && sections[currentSection].length > 0) {
@@ -260,7 +277,7 @@ const LogViewer = () => {
         });
 
         return sections;
-    }, [logs, selectedLogLevel]);
+    }, [logs, selectedLogLevel, selectedClass]);
 
     const { Panel } = Collapse;
 
@@ -286,6 +303,11 @@ const LogViewer = () => {
 
     const handleLogLevelChange = (value) => {
         setSelectedLogLevel(value);
+        setSelectedClass('All Components'); // Reset the selected class when the log level is changed
+    };
+
+    const handleClassChange = (value) => {
+        setSelectedClass(value);
     };
 
     const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -309,6 +331,17 @@ const LogViewer = () => {
                     <Option value="EXCEPTION">EXCEPTION ({logLevelCounts.EXCEPTION})</Option>
                     <Option value="FATAL">FATAL ({logLevelCounts.FATAL})</Option>
                     <Option value="DEBUG">DEBUG ({logLevelCounts.DEBUG})</Option>
+                </Select>
+                <Select
+                    defaultValue="All Components"
+                    style={{ width: 150, marginRight: 16 }}
+                    onChange={handleClassChange}
+                >
+                    {availableClasses.map((classValue) => (
+                        <Option value={classValue} key={classValue}>
+                            {classValue}
+                        </Option>
+                    ))}
                 </Select>
                 <Select
                     defaultValue={`${itemsPerPage}`}

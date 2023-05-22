@@ -4,7 +4,10 @@ import SkippedFramesGraph from '../Visualisations/SkippedFramesGraphSingle';
 import { Tag } from 'antd';
 import styles from './StatusDetail.module.css';
 
-function StatusDetail({ data, label, nestedKeys, port }) {
+export const tags = ["Match ID", "CPU Core", "Region"];
+const allowedLabels = ['Region', 'Match ID', 'Public Game Port', 'Public Voice Port', 'Status', 'Game Phase', 'Connections', 'Players', 'Match Duration', 'Uptime', 'CPU Core', 'CPU Utilisation', 'Scheduled Shutdown', 'Proxy Enabled', 'Performance (lag)'];
+
+function StatusDetail({ data, label, nestedKeys, port, status }) {
   const getValue = () => {
     if (nestedKeys) {
       return nestedKeys.reduce((acc, key) => acc[key], data);
@@ -12,18 +15,33 @@ function StatusDetail({ data, label, nestedKeys, port }) {
     return data;
   };
 
-  const value = getValue();
-
-  // Add the labels you want to render here
-  const allowedLabels = ['Region', 'Match ID', 'Public Game Port', 'Public Voice Port', 'Status', 'Game Phase', 'Connections', 'Players', 'Uptime', 'CPU Core', 'Scheduled Shutdown', 'Proxy Enabled', 'Performance (lag)'];
+  let value = getValue();
 
   if (allowedLabels.includes(label)) {
-    if (label === 'Region') {
+    if (tags.includes(label)) {
+      if (!value) { return; }
+      if (label === "Match ID") {
+        const matchDuration = status['Match Duration'];
+        if (matchDuration) {
+          value = `M${value} (${matchDuration})`
+        } else {
+          value = `M${value}`;
+        }
+      } else if (label === "CPU Core") {
+        const cpuUtil = status['CPU Utilisation'];
+        if (cpuUtil) {
+          value = `Core ${value} - ${cpuUtil}`
+        } else {
+          value = `Core ${value}`
+        }
+      }
       return (
         <div className={`status-detail ${styles['status-detail']}`}>
-          <Tag color="blue" className={styles['region-tag']}>
-            {value}
-          </Tag>
+          <div className={styles['tags-container']}>
+            <Tag color="blue" className={styles['tag']}>
+              {value}
+            </Tag>
+          </div>
         </div>
       );
     } else {

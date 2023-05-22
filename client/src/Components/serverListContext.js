@@ -76,22 +76,8 @@ export const ServerListProvider = ({ children }) => {
               await new Promise((resolve) => setTimeout(resolve, delay));
             }
             const isSelectedServer = server.address === selectedServerAddress;
-            const serverStatusResponse = await performTCPCheck(server.address, server.port).catch((error) => {
-              // Increase the backoff delay for this server if it's offline
-              if (error.code === "ECONNABORTED") {
-                setBackoffDelays((prevDelays) => {
-                  const currentDelay = prevDelays[server.address] || 0;
-                  const newDelay = Math.min(currentDelay * 2 || 20000, 60000); // Limit the maximum backoff delay to 1 minute
-                  return { ...prevDelays, [server.address]: newDelay };
-                });
-              }
 
-              return {
-                data: {
-                  status: 'unknown',
-                },
-              };
-            });
+            const serverStatusResponse = await performTCPCheck(server.address, server.port);
             if (serverStatusResponse.data.status === 'online') {
               setBackoffDelays((prevDelays) => ({ ...prevDelays, [server.address]: 0 }));
             }
@@ -105,7 +91,22 @@ export const ServerListProvider = ({ children }) => {
             };
           } catch (error) {
             console.error('Error fetching server status:', error);
-            return null;
+            // Increase the backoff delay for this server if it's offline
+            if (error.code === "ECONNABORTED") {
+              setBackoffDelays((prevDelays) => {
+                const currentDelay = prevDelays[server.address] || 0;
+                const newDelay = Math.min(currentDelay * 2 || 20000, 60000); // Limit the maximum backoff delay to 1 minute
+                return { ...prevDelays, [server.address]: newDelay };
+              });
+            }
+
+            return {
+              label: server.name,
+              value: server.address,
+              port: server.port || 5000,
+              status: 'unknown',
+              isSelectedServer: server.address === selectedServerAddress,
+            };
           }
         });
 
