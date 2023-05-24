@@ -26,7 +26,7 @@ function SkippedFramesGraph({ port }) {
   useEffect(() => {
     const intervalId = setInterval(() => {
       fetchData();
-    }, 5000);
+    }, 30000);
 
     return () => clearInterval(intervalId);
   }, [fetchData]);
