@@ -51,5 +51,9 @@ cd honfigurator-webui\server
 npm install
 cd ..\client
 npm install
+
+# you can choose production or development like this (in CMD):
+# NODE_ENV=DEVELOPMENT
+# NODE_ENV=PRODUCTION
 npm run start-both
 ```
