@@ -202,16 +202,27 @@ const ComponentHealth = () => {
     return renderTasks(managerTasks, 'Manager Tasks');
   };
 
+  const renderHealthChecks = () => {
+    const healthChecks = tasksStatus['health_checks'];
+
+    if (!healthChecks) {
+      return null;
+    }
+
+    return renderTasks(healthChecks, 'Health Checks');
+  };
+
   return (
     <div>
       <Spin spinning={isLoading}>
         <Row gutter={16}>
-          <Col span={12}>{renderGameServerTasks()}</Col>
-          <Col span={12}>{renderManagerTasks()}</Col>
+          <Col xs={24} sm={24} md={24} lg={8} xl={8}>{renderGameServerTasks()}</Col>
+          <Col xs={24} sm={24} md={24} lg={8} xl={8}>{renderManagerTasks()}</Col>
+          <Col xs={24} sm={24} md={24} lg={8} xl={8}>{renderHealthChecks()}</Col>
         </Row>
       </Spin>
     </div>
-  );
+);
 };
 
 export default ComponentHealth;

@@ -74,14 +74,15 @@ const createProxyHandler = (path, method) => {
             const response = await axios({
                 url: url,
                 method: method,
+                timeout: 3000,  // Here is the timeout
                 headers: {
                     ...req.headers,
                     'Content-Type': 'application/json',
-                    'selected-server': req.headers['selected-server'], // Add this line
+                    'selected-server': req.headers['selected-server'], 
                     'selected-port': req.headers['selected-port'],
                     Authorization: req.headers.authorization,
                 },
-                data: req.body, // Add this line
+                data: req.body, 
                 httpsAgent: agent,
             });
             res.status(response.status).json(response.data);
@@ -123,13 +124,15 @@ const createProxyHandlerWithParams = (path, method) => {
             const response = await axios({
                 url: url,
                 method: method,
+                timeout: 3000,  // Here is the timeout
                 headers: {
                     ...req.headers,
-                    'selected-server': req.headers['selected-server'],
+                    'selected-server': req.headers['selected-server'], 
                     'selected-port': req.headers['selected-port'],
-                    'Authorization': req.headers.authorization,
+                    Authorization: req.headers.authorization,
                 },
                 data: req.body,
+                httpsAgent: agent,
             });
             res.status(response.status).json(response.data);
             status_code = response.status;
