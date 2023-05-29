@@ -21,6 +21,7 @@ import { handleEditServer, handleRemoveServer, ServerNotConnected, getServerStat
 import handleLogout from './Security/logout';
 // import LogViewer from './Components/troubleshooting/LogViewer';
 import TroubleshootingPage from './Components/troubleshooting/troubleshooting';
+import GameReplaysSearchPage from './Components/replaySearch/replayFinder';
 import CustomHeader from './Header';
 
 const { Header, Content, Sider } = Layout;
@@ -271,6 +272,9 @@ function AppContent() {
                   <Link to="/roles">Users & Roles</Link>
                 </Menu.Item>
                 <Menu.Item key="5">
+                  <Link to="/replays">Replays</Link>
+                </Menu.Item>
+                <Menu.Item key="6">
                   <Link to="/troubleshooting">Troubleshooting</Link>
                 </Menu.Item>
               </Menu>
@@ -342,6 +346,10 @@ function AppContent() {
                     <Route
                       path="/roles"
                       element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? UsersandRoles : ServerNotConnected} />}
+                    />
+                    <Route
+                      path="/replays"
+                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? GameReplaysSearchPage : ServerNotConnected} />}
                     />
                     <Route
                       path="/troubleshooting"

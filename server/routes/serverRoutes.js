@@ -5,6 +5,7 @@ const session = require('../db/session');
 const jwt = require('jsonwebtoken');
 const https = require('https');
 const fs = require('fs');
+const { getUserServersFromDatabase } = require('../db/session');
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -53,6 +54,7 @@ const addAccessToken = async (req, res, next) => {
 
         // Add the access token to the request headers
         req.headers.authorization = `Bearer ${accessToken}`;
+        req.headers.user_id = userId
         next();
     } catch (error) {
         console.error('Failed to retrieve access token from database:', error);
@@ -78,11 +80,11 @@ const createProxyHandler = (path, method) => {
                 headers: {
                     ...req.headers,
                     'Content-Type': 'application/json',
-                    'selected-server': req.headers['selected-server'], 
+                    'selected-server': req.headers['selected-server'],
                     'selected-port': req.headers['selected-port'],
                     Authorization: req.headers.authorization,
                 },
-                data: req.body, 
+                data: req.body,
                 httpsAgent: agent,
             });
             res.status(response.status).json(response.data);
@@ -127,7 +129,7 @@ const createProxyHandlerWithParams = (path, method) => {
                 timeout: 3000,  // Here is the timeout
                 headers: {
                     ...req.headers,
-                    'selected-server': req.headers['selected-server'], 
+                    'selected-server': req.headers['selected-server'],
                     'selected-port': req.headers['selected-port'],
                     Authorization: req.headers.authorization,
                 },
@@ -144,10 +146,77 @@ const createProxyHandlerWithParams = (path, method) => {
                 status_code = 500;
                 res.status(status_code).json({ error: 'Internal server error' });
             }
-        
+
         } finally {
             console.log(`[${status_code}] - ${url}`);
         }
+    };
+}
+
+const createProxyHandlerWithParamsAllServers = (path, method) => {
+    return async (req, res) => {
+        let status_code = '';
+
+        // Get the user's registered servers from the database
+        const userServers = await getUserServersFromDatabase(req.headers.user_id);
+        console.log(userServers)
+
+        // Initialize an array to hold the responses from all servers
+        const responses = [];
+
+        // Loop over the user's servers
+        for (const server of userServers) {
+            let url = '';
+            try {
+                const fullPath = Object.entries(req.params).reduce(
+                    (currentPath, [key, value]) => currentPath.replace(`:${key}`, value),
+                    path
+                );
+
+                const newQuery = Object.entries(req.query)
+                    .filter(([key]) => key !== 'timestamp')
+                    .map(([key, value]) => `${key}=${value}`)
+                    .join('&');
+
+                const newPath = newQuery ? `${fullPath}?${newQuery}` : fullPath;
+                req.headers['selected-server'] = server.address;  // or whatever the IP property is called in your database
+                req.headers['selected-port'] = server.port; // or whatever the port property is called in your database
+                // url = getTargetUrl(newPath, req);
+                url = `https://${server.address}:${server.port}${newPath}`
+                const response = await axios({
+                    url: url,
+                    method: method,
+                    timeout: 3000,  // Here is the timeout
+                    headers: {
+                        ...req.headers,
+                        'selected-server': req.headers['selected-server'],
+                        'selected-port': req.headers['selected-port'],
+                        Authorization: req.headers.authorization,
+                    },
+                    data: req.body,
+                    httpsAgent: agent,
+                });
+                // Save this server's response
+                status_code = response.status;
+                if (status_code === 200) {
+                    responses.push(response.data);
+                }
+            } catch (error) {
+                if (error.response) {
+                    status_code = error.response.status;
+                    // responses.push({ error: error.response.data });
+                } else {
+                    status_code = 500;
+                    // responses.push({ error: 'Internal server error' });
+                }
+            } finally {
+                console.log(`[${status_code}] - ${url}`);
+            }
+        }
+
+        // Return all the responses
+        console.log(responses)
+        res.json(responses);
     };
 }
 
@@ -205,6 +274,7 @@ router.get(
     },
     createProxyHandler('/api/get_honfigurator_log_file')
 );
+router.get('/get_replay/:match_id', addAccessToken, createProxyHandlerWithParamsAllServers('/api/get_replay/:match_id', 'get'));
 
 /*
     Server setters
