@@ -57,3 +57,9 @@ npm install
 # NODE_ENV=PRODUCTION
 npm run start-both
 ```
+### Building Project
+You only need to build the website, since the server can run with node.
+```
+cd honfigurator-webui\client
+npm run build
+```
