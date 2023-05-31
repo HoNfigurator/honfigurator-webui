@@ -246,6 +246,7 @@ router.delete('/roles/delete/:role_name', addAccessToken, createProxyHandlerWith
 */
 router.get('/get_server_config_item/:key', addAccessToken, createProxyHandlerWithParams('/api/get_server_config_item/:key', 'get'));
 router.get('/get_total_allowed_servers', addAccessToken, createProxyHandler('/api/get_total_allowed_servers', 'get'));
+router.get('/get_hon_version', addAccessToken, createProxyHandler('/api/get_hon_version', 'get'));
 router.get('/get_total_servers', addAccessToken, createProxyHandler('/api/get_total_servers', 'get'));
 router.get('/get_total_cpus', addAccessToken, createProxyHandler('/api/get_total_cpus', 'get'));
 router.get('/get_num_reserved_cpus', addAccessToken, createProxyHandler('/api/get_num_reserved_cpus', 'get'));

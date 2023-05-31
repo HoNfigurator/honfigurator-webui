@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Input, Button, Table } from 'antd';
+import { Input, Button, Table, Typography } from 'antd';
 
 
 const { Search } = Input;
@@ -58,6 +58,7 @@ const GameReplaysSearchPage = () => {
 
   return (
     <div>
+      <Typography.Title level={2}>Currently available via staging servers only</Typography.Title>
       <Search 
         placeholder="Enter Match ID" 
         enterButton="Search" 

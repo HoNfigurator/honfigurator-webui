@@ -25,7 +25,8 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
       axiosInstanceServer.get(`/get_cpu_name?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_current_github_branch?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_all_github_branches?_t=${Date.now()}`),
-      axiosInstanceServer.get(`/get_all_public_ports?_t=${Date.now()}`)
+      axiosInstanceServer.get(`/get_all_public_ports?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_hon_version?_t=${Date.now()}`)
     ];
 
     const responses = await Promise.allSettled(requests);
@@ -52,6 +53,7 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
         game: data[15].public_game_ports || [],
         voice: data[15].public_voice_ports || [],
       },
+      honVersion: data[16] || null
     };
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -100,6 +102,7 @@ function Home() {
     game: [],
     voice: [],
   });
+  const [honVersion, setHonVersion] = useState(null);
 
 
   const handleBranchChange = async (branch) => {
@@ -157,6 +160,7 @@ function Home() {
           setGithubBranch(data.githubBranch);
           setGithubAllBranches(data.githubAllBranches);
           setPublicPorts(data.publicPorts);
+          setHonVersion(data.honVersion);
         }
       }
       // Fetch stats once on load
@@ -277,6 +281,9 @@ function Home() {
         </Col>
         <Col xs={24} md={8}>
           <Statistic title="Players Online" value={numPlayersInGame || '0'} />
+        </Col>
+        <Col xs={24} md={8}>
+          <Statistic title="HoN Server Version" value={honVersion || 'N/A'} />
         </Col>
       </Row>
       <br />
