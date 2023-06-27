@@ -26,7 +26,8 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
       axiosInstanceServer.get(`/get_current_github_branch?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_all_github_branches?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_all_public_ports?_t=${Date.now()}`),
-      axiosInstanceServer.get(`/get_hon_version?_t=${Date.now()}`)
+      axiosInstanceServer.get(`/get_hon_version?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_commit_date?_t=${Date.now()}`)
     ];
 
     const responses = await Promise.allSettled(requests);
@@ -53,7 +54,9 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
         game: data[15].public_game_ports || [],
         voice: data[15].public_voice_ports || [],
       },
-      honVersion: data[16] || null
+      honVersion: data[16].data || data[16] || null,
+      commitDate: data[17].data || null
+
     };
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -103,7 +106,7 @@ function Home() {
     voice: [],
   });
   const [honVersion, setHonVersion] = useState(null);
-
+  const [commitDate, setCommitDate] = useState(null);
 
   const handleBranchChange = async (branch) => {
     if (selectedServerValue && selectedServerPort) {
@@ -161,6 +164,7 @@ function Home() {
           setGithubAllBranches(data.githubAllBranches);
           setPublicPorts(data.publicPorts);
           setHonVersion(data.honVersion);
+          setCommitDate(data.commitDate);
         }
       }
       // Fetch stats once on load
@@ -196,13 +200,13 @@ function Home() {
       </Row>
       <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
         <Col xs={24} md={8}>
-          <Statistic title="Servers Configured" value={`${serversTotal || '0'} / ${serverTotalAllowed ? serverTotalAllowed.toString() : '-'}`} suffix={<span style={{ fontSize: '14px' }}>total</span>} />
+          <Statistic title="Servers Configured" value={`${serversTotal || '0'} / ${serverTotalAllowed ? serverTotalAllowed.toString() : '-'}`} suffix={<span style={{ fontSize: '14px' }}>total ({totalPerCore ? totalPerCore.toString() : '-'} per Thread)</span>} />
         </Col>
         <Col xs={24} md={8}>
           <Statistic title="Total Logical CPU Cores" value={cpusTotal ? cpusTotal.toString() : '-'} suffix={<span style={{ fontSize: '14px' }}>cores ({cpusReserved ? cpusReserved.toString() : '-'} threads reserved for OS)</span>} />
         </Col>
         <Col xs={24} md={8}>
-          <Statistic title="Max Servers per Thread" value={totalPerCore ? totalPerCore.toString() : '-'} />
+          <Statistic title="Last Update" value={commitDate || '-'} />
         </Col>
       </Row>
       <Row gutter={[16, 16]} style={{ marginBottom: '20px' }}>
