@@ -9,9 +9,18 @@
     height: 64px;
     width: 100%;
     box-shadow: 0 2px 8px rgba(131, 131, 131, 0.1);
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Roboto', san
+    s-serif;
+}
+.health-status-container {
+    display: flex;
+    align-items: center;
+    color: white;
 }
 
+.health-status-indicator {
+    margin-left: 5px;
+}
 
 .header-title {
     display: flex;

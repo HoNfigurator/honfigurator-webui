@@ -23,6 +23,9 @@ import handleLogout from './Security/logout';
 import TroubleshootingPage from './Components/troubleshooting/troubleshooting';
 import GameReplaysSearchPage from './Components/replaySearch/replayFinder';
 import CustomHeader from './Header';
+import useKongorHealthStatus from './hooks/useKongorHealthCheck';
+import { TaskStatusContext, TaskStatusProvider } from './hooks/useTaskStatusContext';
+
 
 const { Header, Content, Sider } = Layout;
 
@@ -60,7 +63,7 @@ function AppContent() {
   const [addServerModalVisible, setAddServerModalVisible] = useState(false);
   const [editServerModalVisible, setEditServerModalVisible] = useState(false);
   const [serverToEdit, setServerToEdit] = useState(null);
-
+  const kongorHealthStatus = useKongorHealthStatus();
 
   const token = localStorage.getItem('sessionToken');
   const location = useLocation();
@@ -82,14 +85,17 @@ function AppContent() {
     }
   }
 
-  const fetchUserInfoServer = async () => {
+  const fetchUserInfoServer = async (serverValue, serverLabel, serverPort) => {
     try {
-      const axiosInstanceServer = createAxiosInstanceServer(selectedServerValue, selectedServerPort);
+      const axiosInstanceServer = createAxiosInstanceServer(serverValue, serverPort);
       // Fetch user's role and permissions
       const rolePermissionsResponse = await axiosInstanceServer.get('/user');
       const roles = rolePermissionsResponse.data.roles;
       const perms = rolePermissionsResponse.data.perms;
       setUserRolePermissions({ roles, perms });
+      setSelectedServerLabel(serverLabel);
+      setSelectedServerValue(serverValue);
+      setSelectedServerPort(serverPort);
     } catch (error) {
       console.error("Error fetching role permissions:", error);
       const roles = ["Not available"];
@@ -99,6 +105,7 @@ function AppContent() {
       setLoadingServerData(false); // Set loadingServerData to false
     }
   };
+
 
   useEffect(() => {
     if (authenticated) {
@@ -111,47 +118,37 @@ function AppContent() {
           const previousSelectedServer = serverOptions.find(
             (option) => option.value === lastSelectedServerAddress && option.port === parseInt(lastSelectedServerPort)
           );
-          if (previousSelectedServer) {
-            setSelectedServerLabel(previousSelectedServer.label);
-            setSelectedServerValue(previousSelectedServer.value);
-            setSelectedServerPort(previousSelectedServer.port);
-          } else {
-            setSelectedServerLabel(serverOptions[0].label);
-            setSelectedServerValue(serverOptions[0].value);
-            setSelectedServerPort(serverOptions[0].port);
+          if (previousSelectedServer && previousSelectedServer.status === "OK") {
+            // setLoadingServerData(true);
+            fetchUserInfoServer(previousSelectedServer.value, previousSelectedServer.label, previousSelectedServer.port);
           }
         } else {
-          setSelectedServerLabel(serverOptions[0].label);
-          setSelectedServerValue(serverOptions[0].value);
-          setSelectedServerPort(serverOptions[0].port);
+          const firstServer = serverOptions[0];
+          if (firstServer.status === "OK") {
+            // setLoadingServerData(true);
+            fetchUserInfoServer(firstServer.value, firstServer.label, firstServer.port);
+          }
         }
       } else {
         setSelectedServerLabel("");
         setSelectedServerValue("");
         setSelectedServerPort("");
       }
-      if (selectedServerValue && selectedServerStatus === "OK") {
-        // setLoadingServerData(true);
-        fetchUserInfoServer();
-      } else {
-        setLoadingServerData(false);
-      }
     }
-  }, [authenticated, userSelected, selectedServerValue, selectedServerStatus, serverOptions]);
+  }, [authenticated, userSelected, serverOptions]);
+
 
   const handleServerChange = (label) => {
     const selected = serverOptions.find((option) => option.label === label);
     // console.log(selected);
     if (selected) {
       setLoadingServerData(true);
-      setSelectedServerLabel(selected.label);
-      setSelectedServerValue(selected.value);
-      setSelectedServerPort(selected.port);
       localStorage.setItem('lastSelectedServer', `${selected.value}:${selected.port}`);
       // Call fetchUserInfoServer directly
-      fetchUserInfoServer();
+      fetchUserInfoServer(selected.value, selected.label, selected.port);
     }
   };
+
 
   const serverListMenu = (
     <Menu
@@ -216,6 +213,8 @@ function AppContent() {
 
   const serverStatusIndicator = getServerStatusIndicator(selectedServerStatus);
 
+  // const { hasError } = useContext(TaskStatusContext);
+
   return (
     <>
       <SelectedServerContext.Provider
@@ -254,6 +253,15 @@ function AppContent() {
                 minHeight: `calc(100vh - ${headerHeight}px)`
               }}
             >
+              <div
+                style={{
+                  padding: '10px',
+                  color: kongorHealthStatus.includes('🟢') ? 'green' : 'red',
+                  backgroundColor: 'white' // Add this line
+                }}
+              >
+                Kongor Status: {kongorHealthStatus}
+              </div>
               <Menu
                 mode="inline"
                 defaultSelectedKeys={["1"]}
@@ -275,7 +283,9 @@ function AppContent() {
                   <Link to="/replays">Replays</Link>
                 </Menu.Item>
                 <Menu.Item key="6">
-                  <Link to="/troubleshooting">Troubleshooting</Link>
+                  <Link to="/troubleshooting">
+                    Troubleshooting
+                  </Link>
                 </Menu.Item>
               </Menu>
             </Sider>

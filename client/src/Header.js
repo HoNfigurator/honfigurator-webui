@@ -1,5 +1,5 @@
 import { React, useContext } from 'react';
-import { Layout, Row, Col, Dropdown, Menu, Button, Avatar, Tooltip } from 'antd';
+import { Layout, Dropdown, Button, Avatar, Tooltip } from 'antd';
 import { UserOutlined, LogoutOutlined, DownOutlined } from '@ant-design/icons';
 import { SelectedServerContext } from './App';
 import './Header.css'
@@ -76,7 +76,6 @@ const CustomHeader = ({
             </div>
         </Header>
     );
-
 };
 
 export default CustomHeader;

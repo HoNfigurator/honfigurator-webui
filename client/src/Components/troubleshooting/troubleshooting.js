@@ -6,7 +6,7 @@ import ComponentHealth from './componentHealth';
 const { TabPane } = Tabs;
 
 const TroubleshootingPage = () => {
-  const [activeTab, setActiveTab] = useState('logViewer');
+  const [activeTab, setActiveTab] = useState('componentHealth');
 
   const handleTabChange = (key) => {
     setActiveTab(key);
@@ -15,11 +15,11 @@ const TroubleshootingPage = () => {
   return (
     <div>
       <Tabs activeKey={activeTab} onChange={handleTabChange}>
-        <TabPane tab="Log Viewer" key="logViewer">
-          <LogViewer />
-        </TabPane>
         <TabPane tab="Component Health" key="componentHealth">
           <ComponentHealth />
+        </TabPane>
+        <TabPane tab="Log Viewer" key="logViewer">
+          <LogViewer />
         </TabPane>
       </Tabs>
     </div>

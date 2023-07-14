@@ -5,10 +5,11 @@ const axios = require('axios');
 
 const userController = require('../controllers/userController');
 const TokenManager = require('../helpers/tokenManager');
+const qs = require('querystring');
 const { oauth } = require('../controllers/userController');
+const { unserialize } = require('php-unserialize'); // Import the library at the top of your file
 
 const router = express.Router();
-const net = require('net');
 
 function removeTimestampParam(req, res, next) {
   if (req.query.timestamp) {
@@ -35,13 +36,76 @@ router.get('/user/get_servers', authMiddleware, discordAuthMiddleware, userContr
 // Get users information from the Discord API
 router.get('/user/info', authMiddleware, discordAuthMiddleware, userController.getDiscordUserInfo);
 
+// Kongor API healthcheck
+router.get('/kongor-health', (req, res) => {
+  fetch('https://api.kongor.online/health')
+    .then(response => {
+      if (!response.ok) {
+        throw response;
+      }
+      // Check the content type to determine how to parse the response
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return response.json();
+      } else {
+        return response.text();  // Fallback to text if it's not JSON
+      }
+    })
+    .then(data => res.json(data)) // Forward the parsed response
+    .catch(errorResponse => {
+      if (errorResponse.text) {
+        // If there's a text body, forward it along with the status code
+        errorResponse.text().then(errorMessage => {
+          res.status(errorResponse.status).send(errorMessage);
+        });
+      } else {
+        // If there's no text body, just forward the status code
+        res.status(errorResponse.status).end();
+      }
+    });
+});
+
+router.get('/get_match_stats/:matchId', authMiddleware, discordAuthMiddleware, async (req, res) => {
+  const match_id = req.params.matchId;
+  const sessionCookie = process.env.HON_COOKIE;
+
+  const data = qs.stringify({
+    match_id: match_id,
+    cookie: sessionCookie
+  });
+
+  const config = {
+    method: 'post',
+    url: 'http://api.kongor.online/client_requester.php?f=get_match_stats',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': '*/*',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'User-Agent': 'HoNfigurator-WebUI'
+      // add any other headers required
+    },
+    data: data
+  };
+
+  try {
+    const response = await axios(config);
+    const deserializedData = unserialize(response.data); // Deserialize the PHP serialized data
+    res.json(deserializedData); // Send the deserialized data as JSON
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error fetching match stats' });
+  }
+});
+
+// authenticateToMasterserver("aufrankhost2", "!$4jb4pb9#gMQ?CY");
+
 // Add server to users managed server list
 router.post('/user/add_server', authMiddleware, discordAuthMiddleware, userController.addManagedServer);
 
 router.put('/user/update_server', authMiddleware, discordAuthMiddleware, userController.updateServer);
 router.delete('/user/delete_server', authMiddleware, discordAuthMiddleware, userController.deleteServer);
 
-// In your server's routes/userRoutes.js file
+// Refresh the current session using a valid discord token
 router.post('/user/refresh', authMiddlewareAllowExpired, discordAuthMiddleware, async (req, res) => {
   try {
     console.log(`received refresh request. ${req.user.user_id}`);
@@ -104,7 +168,6 @@ async function authMiddlewareAllowExpired(req, res, next) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 }
-
 
 // Custom authMiddleware
 async function authMiddleware(req, res, next) {

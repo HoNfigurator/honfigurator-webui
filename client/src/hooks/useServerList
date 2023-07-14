@@ -1,0 +1,13 @@
+// hooks/useServerList.js
+import { useState, useEffect } from 'react';
+import { axiosInstanceUI } from '../axios'; // Import your axios instance
+
+export const useServerList = () => {
+  const [serverOptions, setServerOptions] = useState([]);
+  const [serverStatusLoading, setServerStatusLoading] = useState(false);
+  const [firstLoad, setFirstLoad] = useState(true);
+
+  // Fetching logic for serverOptions...
+
+  return { serverOptions, serverStatusLoading, firstLoad };
+};
