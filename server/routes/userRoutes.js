@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 
 const userController = require('../controllers/userController');
+const { createHandshakePacket, createReplayRequestPacket, parseReplayStatus } = require('../controllers/kongorChatController');
 const TokenManager = require('../helpers/tokenManager');
 const qs = require('querystring');
 const { oauth } = require('../controllers/userController');
@@ -66,11 +67,12 @@ router.get('/kongor-health', (req, res) => {
 });
 
 router.get('/get_match_stats/:matchId', authMiddleware, discordAuthMiddleware, async (req, res) => {
-  const match_id = req.params.matchId;
+  let matchId = req.params.matchId;
+  matchId = matchId.replace(/^[mM]/, '');
   const sessionCookie = process.env.HON_COOKIE;
 
   const data = qs.stringify({
-    match_id: match_id,
+    match_id: matchId,
     cookie: sessionCookie
   });
 
@@ -94,6 +96,85 @@ router.get('/get_match_stats/:matchId', authMiddleware, discordAuthMiddleware, a
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error fetching match stats' });
+  }
+});
+
+router.get('/check_replay_exists/:matchId', async (req, res) => {
+  try {
+    let matchId = req.params.matchId;
+    matchId = matchId.replace(/^[mM]/, '');
+    const config = {
+      method: 'head',
+      url: `http://api.kongor.online/replays/M${matchId}.honreplay`,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'User-Agent': 'HoNfigurator-WebUI'
+        // add any other headers required
+      }
+    }
+    const existing = await axios(config);
+    res.sendStatus(200);
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      res.sendStatus(404);
+    } else {
+      console.error('An error occurred while checking if replay exists:', error);
+      res.status(500).send('An error occurred while checking if replay exists');
+    }
+  }
+});
+
+const net = require('net');
+router.get('/request_replay/:matchId', async (req, res) => {
+  let { matchId } = req.params;
+  matchId = matchId.replace(/^[mM]/, '');
+  try {
+    console.log(`requesting replay: ${matchId}`)
+    const client = new net.Socket();
+    const chat_address = 'chat.kongor.online';
+    const chat_port = 11031;
+
+    client.connect(chat_port, chat_address, async () => {
+      console.log('Connected to the remote server');
+
+      const handshake_packet = createHandshakePacket();
+      client.write(handshake_packet);
+    });
+
+    client.on('data', (data) => {
+      const messageType = data[2] + data[3] * 256;  // Calculate the 16-bit integer value manually
+      console.log(`Message type: ${messageType.toString(16).padStart(4, '0')}`);
+
+      if (messageType === 0x68) {
+        const replay_request_packet = createReplayRequestPacket(matchId);
+        client.write(replay_request_packet);
+      }
+
+      if (messageType === 0xbf) {
+        const replayStatus = parseReplayStatus(data);
+
+        if (replayStatus['status'] === 7) {
+          console.log("closing");
+          client.end();
+          client.destroy();
+        }
+      }
+    });
+
+    client.on('close', () => {
+      console.log('Connection closed');
+      res.sendStatus(200);
+    });
+
+    client.on('error', (err) => {
+      console.error('TCP socket connection error:', err);
+      res.status(500).send('Failed to request replay due to TCP socket connection error');
+    });
+  } catch (err) {
+    console.error('Request replay error:', err);
+    res.status(500).send('Failed to request replay');
   }
 });
 
