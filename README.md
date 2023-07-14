@@ -30,6 +30,8 @@ BASE_URL='https://management.honfigurator.app'
 CERTIFICATE_FILE='cert.pem'
 CERTIFICATE_KEY='privkey.pem'
 CERTIFICATE_CHAIN='fullchain.pem'
+
+HON_COOKIE='<static-cookie>'
 ```
 #### server\\.env.development
 ```
@@ -44,6 +46,8 @@ BASE_URL='http://localhost:3000'
 CERTIFICATE_FILE='cert.pem'
 CERTIFICATE_KEY='privkey.pem'
 CERTIFICATE_CHAIN='fullchain.pem'
+
+HON_COOKIE='<static-cookie>'
 ```
 ### Running Project
 ```
