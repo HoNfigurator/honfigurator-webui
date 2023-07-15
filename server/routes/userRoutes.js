@@ -126,8 +126,22 @@ router.get('/check_replay_exists/:matchId', async (req, res) => {
     }
   }
 });
-
 const net = require('net');
+
+// Helper function to determine the status message and HTTP status code
+function getStatusMessageAndCode(status) {
+  switch (status) {
+    case -1: return [400, "None"];
+    case 0: return [400, "General Failure"];
+    case 1: return [504, "Replay does not exist"];
+    case 2: return [403, "Invalid Host"];
+    case 3: return [200, "Already Uploaded"];
+    case 4: return [400, "Already Queued"];
+    case 7: return [200, "Upload successful"];
+    default: return [400, "Unknown status"];
+  }
+}
+
 router.get('/request_replay/:matchId', async (req, res) => {
   let { matchId } = req.params;
   matchId = matchId.replace(/^[mM]/, '');
@@ -148,16 +162,26 @@ router.get('/request_replay/:matchId', async (req, res) => {
       const messageType = data[2] + data[3] * 256;  // Calculate the 16-bit integer value manually
       console.log(`Message type: ${messageType.toString(16).padStart(4, '0')}`);
 
-      if (messageType === 0x68) {
+      if (messageType === 0x1c01) {
+        console.log("Chat authentication request failed.")
+        res.status(401).json({message:"Chat authentication request failed"});
+        client.end();
+        client.destroy();
+      } else if (messageType === 0x1c00) {
         const replay_request_packet = createReplayRequestPacket(matchId);
         client.write(replay_request_packet);
       }
 
       if (messageType === 0xbf) {
         const replayStatus = parseReplayStatus(data);
-
-        if (replayStatus['status'] === 7) {
+        console.log(replayStatus['status'])
+        const [httpStatusCode, statusMessage] = getStatusMessageAndCode(replayStatus['status']);
+        
+        // If the status is a failure, or the upload is complete, close the connection.
+        if (replayStatus['status'] <= 2 || replayStatus['status'] === 7) {
           console.log("closing");
+          console.log(statusMessage)
+          res.status(httpStatusCode).json({message:statusMessage});
           client.end();
           client.destroy();
         }
@@ -166,16 +190,15 @@ router.get('/request_replay/:matchId', async (req, res) => {
 
     client.on('close', () => {
       console.log('Connection closed');
-      res.sendStatus(200);
     });
 
     client.on('error', (err) => {
       console.error('TCP socket connection error:', err);
-      res.status(500).send('Failed to request replay due to TCP socket connection error');
+      res.status(500).json({message:'Failed to request replay due to TCP socket connection error'});
     });
   } catch (err) {
     console.error('Request replay error:', err);
-    res.status(500).send('Failed to request replay');
+    res.status(500).json({message:'Failed to request replay'});
   }
 });
 

@@ -15,109 +15,82 @@ const teamMapping = (teamNumber) => {
   }
 };
 
-const columns = [
-  {
-    title: 'Server Name',
-    dataIndex: 'name',
-  },
-  {
-    title: 'Match ID',
-    dataIndex: 'match_id',
-  },
-  {
-    title: 'Match Time',
-    dataIndex: 'date',
-  },
-  {
-    title: 'Winner',
-    dataIndex: 'winning_team',
-  },
-  {
-    title: 'Duration',
-    dataIndex: 'duration',
-  },
-  {
-    title: 'Download',
-    dataIndex: 's3_url',
-    render: (s3_url, { match_id }) => {
-      const DownloadButton = () => {
-        const [state, setState] = useState('checking');
-        const [error, setError] = useState('');
+const DownloadButton = ({ s3_url, match_id }) => {
+  const [state, setState] = useState('checking');
+  const [error, setError] = useState('');
 
-        const checkReplayExists = async () => {
-          setError('');
-          try {
-            const response = await fetch(`/api-ui/check_replay_exists/${match_id}`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`,
-              },
-            });
-            if (response.ok) {
-              setState('download');
-            } else {
-              throw new Error('Replay not found');
-            }
-          } catch (err) {
-            setState('request');
-          }
-        };
+  const checkReplayExists = async () => {
+    setError('');
+    try {
+      const response = await fetch(`/api-ui/check_replay_exists/${match_id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`,
+        },
+      });
+      if (response.ok) {
+        setState('download');
+      } else {
+        throw new Error('Replay not found');
+      }
+    } catch (err) {
+      setState('request');
+    }
+  };
 
-        const requestReplay = async () => {
-          setState('requesting');
-          setError('');
-          try {
-            const res = await fetch(`/api-ui/request_replay/${match_id}`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`,
-              },
-            });
-            if (res.status === 200) {
-              setState('download');
-            } else {
-              setError(`Error requesting replay: ${res.status}`);
-              setState('failed');
-            }
-          } catch (err) {
-            setError(err.message || 'Unknown error');
-            setState('failed');
-          }
-        };
+  const requestReplay = async () => {
+    setState('requesting');
+    setError('');
+    try {
+      const res = await fetch(`/api-ui/request_replay/${match_id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`,
+        },
+      });
+      if (res.ok) {
+        setState('download');
+      } else {
+        const errorResponse = await res.json();  // Assumes error response is a JSON object
+        setError(`${errorResponse.message}`);  // errorResponse.message depends on your server's error structure
+        setState('failed');
+      }
+    } catch (err) {
+      console.log(err)
+      setError(err.message || 'Unknown error');
+      setState('failed');
+    }
+  };
 
-        const handleDownloadClick = () => {
-          window.location.href = s3_url;
-        };
+  const handleDownloadClick = () => {
+    window.location.href = s3_url;
+  };
 
-        useEffect(() => {
-          checkReplayExists();
-        }, [match_id]); // Include match_id as a dependency so useEffect runs whenever match_id changes
+  useEffect(() => {
+    checkReplayExists();
+  }, [match_id]); // Include match_id as a dependency so useEffect runs whenever match_id changes
 
-        if (state === 'checking') {
-          return <p>Checking...</p>;
-        } else if (state === 'request') {
-          return <Button onClick={requestReplay}>Request</Button>;
-        } else if (state === 'download') {
-          return <Button onClick={handleDownloadClick}>Download</Button>;
-        } else if (state === 'failed') {
-          return <p>Failed: {error}</p>;
-        } else if (state === 'requesting' || state === 'requesting') {
-          return <p>Requested. Please wait...</p>;
-        }
-      };
-
-      return <DownloadButton />;
-    },
-  },
-]
-
+  if (state === 'checking') {
+    return <p>Checking...</p>;
+  } else if (state === 'request') {
+    return <Button onClick={requestReplay}>Request</Button>;
+  } else if (state === 'download') {
+    return <Button onClick={handleDownloadClick}>Download</Button>;
+  } else if (state === 'failed') {
+    return <p>Error requesting replay: {error}</p>;
+  } else if (state === 'requesting') {
+    return <p>Requested. Please wait...</p>;
+  }
+};
 
 const GameReplaysSearchPage = () => {
   const [loading, setLoading] = useState(false);
   const [replays, setReplays] = useState([]);
+  const [searchCount, setSearchCount] = useState(0);  // New state for search count
 
   const onSearch = async (matchId) => {
     setLoading(true);
+    setSearchCount(prevCount => prevCount + 1);  // Increment search count on every search
     try {
       const response = await fetch(`/api-ui/get_match_stats/${matchId}`, {
         method: 'GET',
@@ -164,6 +137,38 @@ const GameReplaysSearchPage = () => {
       setLoading(false);
     }
   };
+
+  
+const columns = [
+  {
+    title: 'Server Name',
+    dataIndex: 'name',
+  },
+  {
+    title: 'Match ID',
+    dataIndex: 'match_id',
+  },
+  {
+    title: 'Match Time',
+    dataIndex: 'date',
+  },
+  {
+    title: 'Winner',
+    dataIndex: 'winning_team',
+  },
+  {
+    title: 'Duration',
+    dataIndex: 'duration',
+  },
+  {
+    title: 'Download',
+    dataIndex: 's3_url',
+    render: (s3_url, record) => (
+      // Use the search count in the key as well
+      <DownloadButton key={`${record.match_id}-${searchCount}`} s3_url={s3_url} match_id={record.match_id} />
+    ),
+  }
+]
 
   return (
     <div>

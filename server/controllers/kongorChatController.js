@@ -23,17 +23,26 @@ const parseReplayStatus = (data) => {
     }
   
     let status;
-    if (replayStatus['status'] === 5) status = 'QUEUED';
-    if (replayStatus['status'] === 6) status = 'UPLOADING';
-    if (replayStatus['status'] === 7) {
-      status = 'DONE';
-      console.log(`Replay available: http://api.kongor.online/replays/M${replayStatus['match_id']}.honreplay`);
+    switch(replayStatus['status']) {
+        case -1: status = 'NONE'; break;
+        case 0: status = 'GENERAL_FAILURE'; break;
+        case 1: status = 'DOES_NOT_EXIST'; break;
+        case 2: status = 'INVALID_HOST'; break;
+        case 3: status = 'ALREADY_UPLOADED'; break;
+        case 4: status = 'ALREADY_QUEUED'; break;
+        case 5: status = 'QUEUED'; break;
+        case 6: status = 'UPLOADING'; break;
+        case 7:
+            status = 'UPLOAD_COMPLETE';
+            console.log(`Replay available: http://api.kongor.online/replays/M${replayStatus['match_id']}.honreplay`);
+            break;
     }
   
     console.log(`Replay status update\n\tMatch ID: ${replayStatus['match_id']}\n\tStatus: ${status}`);
   
     return replayStatus;
-  };
+};
+
 
 function createHandshakePacket() {
     let packet_data = Buffer.alloc(2);
@@ -44,7 +53,7 @@ function createHandshakePacket() {
     packet_data = Buffer.concat([packet_data, accountId]);
 
     packet_data = Buffer.concat([packet_data, Buffer.from(process.env.HON_COOKIE, 'utf-8'), Buffer.from('\0')]);
-    packet_data = Buffer.concat([packet_data, Buffer.from('203.221.253.95', 'utf-8'), Buffer.from('\0')]);
+    packet_data = Buffer.concat([packet_data, Buffer.from('222.222.222.222', 'utf-8'), Buffer.from('\0')]);
     packet_data = Buffer.concat([packet_data, Buffer.from(process.env.HON_COOKIE, 'utf-8'), Buffer.from('\0')]);
 
     let chat_protocol_version = Buffer.alloc(4);
