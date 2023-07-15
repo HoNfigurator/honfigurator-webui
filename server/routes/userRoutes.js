@@ -57,14 +57,15 @@ router.get('/kongor-health', (req, res) => {
       if (errorResponse.text) {
         // If there's a text body, forward it along with the status code
         errorResponse.text().then(errorMessage => {
-          res.status(errorResponse.status).send(errorMessage);
+          res.status(errorResponse.status || 500).send(errorMessage);
         });
       } else {
         // If there's no text body, just forward the status code
-        res.status(errorResponse.status).end();
+        res.status(errorResponse.status || 500).end();
       }
     });
 });
+
 
 router.get('/get_match_stats/:matchId', authMiddleware, discordAuthMiddleware, async (req, res) => {
   let matchId = req.params.matchId;
