@@ -277,6 +277,7 @@ router.get(
     createProxyHandler('/api/get_honfigurator_log_file')
 );
 router.get('/get_replay/:match_id', addAccessToken, createProxyHandlerWithParamsAllServers('/api/get_replay/:match_id', 'get'));
+router.get('/get_filebeat_oauth_url', addAccessToken, createProxyHandler('/api/get_filebeat_oauth_url', 'get'));
 
 /*
     Server setters

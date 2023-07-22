@@ -24,6 +24,7 @@ import TroubleshootingPage from './Components/troubleshooting/troubleshooting';
 import GameReplaysSearchPage from './Components/replaySearch/replayFinder';
 import CustomHeader from './Header';
 import useKongorHealthStatus from './hooks/useKongorHealthCheck';
+import useFilebeatOAuthCheck from './hooks/useFilebeatOAuthCheck';
 import { TaskStatusContext, TaskStatusProvider } from './hooks/useTaskStatusContext';
 
 
@@ -106,7 +107,7 @@ function AppContent() {
     }
   };
 
-
+  
   useEffect(() => {
     if (authenticated) {
       fetchUserInfoDiscord();
@@ -148,7 +149,6 @@ function AppContent() {
       fetchUserInfoServer(selected.value, selected.label, selected.port);
     }
   };
-
 
   const serverListMenu = (
     <Menu

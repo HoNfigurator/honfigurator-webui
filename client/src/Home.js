@@ -4,6 +4,7 @@ import { Statistic, Row, Col, Progress, Select, message, Modal } from 'antd';
 import SkippedFramesGraphAll from './Visualisations/SkippedFramesGraphAll';
 import { createAxiosInstanceServer } from './Security/axiosRequestFormat';
 import { SelectedServerContext } from './App';
+import useFilebeatOAuthCheck from './hooks/useFilebeatOAuthCheck';
 
 async function fetchStats(selectedServerValue, selectedServerPort) {
   try {
@@ -129,7 +130,7 @@ function Home() {
           }
         },
         onCancel() {
-          
+
         },
       });
     }
@@ -176,8 +177,40 @@ function Home() {
       // Add a cleanup function to clear the interval when the component is unmounted or the server is changed
       return () => clearInterval(intervalId);
     }
+
   }, [selectedServerValue, selectedServerPort, initialValuesSet]);
 
+
+  const filebeatOAuthUrl = useFilebeatOAuthCheck();
+
+  useEffect(() => {
+    if (filebeatOAuthUrl) {
+      message.info({
+        content: (
+          <div>
+            Authorize match log submission<br />
+            <a
+              href={filebeatOAuthUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => message.destroy("filebeatOAuthUrl")}
+            >
+              Authorize here
+            </a>
+          </div>
+        ),
+        key: "filebeatOAuthUrl",
+        duration: 0, // This makes the notification stay until the user manually closes it
+      });
+    }
+  }, [filebeatOAuthUrl]);
+
+  useEffect(() => {
+    if (filebeatOAuthUrl === undefined) {
+      // Destroy the message if it exists
+      message.destroy("filebeatOAuthUrl");
+    }
+  }, [filebeatOAuthUrl]);
 
   return (
     <div>
