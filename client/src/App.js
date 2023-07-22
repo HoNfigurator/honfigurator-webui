@@ -204,8 +204,8 @@ function AppContent() {
       </Menu.Item>
     </Menu>
   );
-
-  const showAddServerButton = authenticated && serverOptions.length === 0;
+  
+  const showAddServerButton = location.pathname !== "/replays" && authenticated && serverOptions.length === 0;
 
   const dropdownMenu = serverListMenu;
 
@@ -359,7 +359,7 @@ function AppContent() {
                     />
                     <Route
                       path="/replays"
-                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? GameReplaysSearchPage : ServerNotConnected} />}
+                      element={<RequireAuth sessionToken={token} component={GameReplaysSearchPage} />}
                     />
                     <Route
                       path="/troubleshooting"
@@ -382,11 +382,6 @@ function AppContent() {
         <AddServerModal
           visible={addServerModalVisible}
           setVisible={setAddServerModalVisible}
-        // onServerAdded={(server) => {
-        //   setSelectedServerLabel(server.label);
-        //   setSelectedServerValue(server.value);
-        //   setSelectedServerPort(server.port);
-        // }}
         />
         <EditServerModal
           visible={editServerModalVisible}
