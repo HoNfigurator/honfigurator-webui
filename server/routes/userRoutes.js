@@ -202,6 +202,27 @@ router.get('/request_replay/:matchId', async (req, res) => {
   }
 });
 
+router.get('/getDiscordUsername/:discordId', async (req, res) => {
+  const discordId = req.params.discordId;
+  const discordBotToken = process.env.BOT_TOKEN;
+
+  const headers = {
+    Authorization: `Bot ${discordBotToken}`,
+  };
+
+  const url = `https://discord.com/api/users/${discordId}`;
+
+  try {
+    const response = await axios.get(url, { headers });
+    const userData = response.data;
+    const username = userData.username;
+    res.status(200).json({ username });
+  } catch (error) {
+    console.error(`Failed to get Discord username for ID: ${discordId}`);
+    res.status(500).json({ error: 'Failed to get Discord username.' });
+  }
+});
+
 // authenticateToMasterserver("aufrankhost2", "!$4jb4pb9#gMQ?CY");
 
 // Add server to users managed server list
