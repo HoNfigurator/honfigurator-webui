@@ -65,22 +65,23 @@ function ServerStates() {
       fetchServerStates();
     } catch (error) {
       if (error.response) {
+        let errorMessage = '';
         if (error.response.status == 401 || error.response.status == 403) {
           if (action === "stop") {
-            message.error(`You do not have permissions to stop a server.`);
+            errorMessage = 'You do not have permissions to stop a server.';
           } else if (action === "start") {
-            message.error(`You do not have permissions to start a server.`);
+            errorMessage = 'You do not have permissions to start a server.';
           }
-          console.error(error);
-
         } else {
           if (action === "stop") {
-            message.error(`An error occured while attempting to stop the server. [${error.response.status}] ${error.response.data}`)
+            errorMessage = `An error occurred while attempting to stop the server. [${error.response.status}] ${error.response.data}`;
           } else if (action === "start") {
-            message.error(`An error occured while attempting to start the server. [${error.response.status}] ${error.response.data}`)
+            errorMessage = `An error occurred while attempting to start the server. [${error.response.status}] ${error.response.data}`;
           }
-          console.error(error);
         }
+        errorMessage = errorMessage.replace(/\n/g, '<br />'); // Replace line breaks with <br />
+        message.error({ content: <span dangerouslySetInnerHTML={{ __html: errorMessage }} />, duration: 5 });
+        console.error(error);
       } else {
         if (action === "stop") {
           message.error('Stopping the server failed for an unknown reason.');
