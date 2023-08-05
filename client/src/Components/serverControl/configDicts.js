@@ -54,7 +54,7 @@ export const honData = {
         label: "Total Per Logical Core",
         tooltip: "Select the total number of servers per logical core",
         type: "select",
-        options: ["1", "2", "3"],
+        options: [0.5, 1, 2, 3],
         section: "Advanced Settings"
     },
     "svr_max_start_at_once": {

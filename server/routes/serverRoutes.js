@@ -294,7 +294,9 @@ router.post('/add_servers/:num', addAccessToken, createProxyHandlerWithParams('/
 router.post('/remove_servers/:num', addAccessToken, createProxyHandlerWithParams('/api/remove_servers/:num', 'post'));
 router.post('/add_all_servers', addAccessToken, createProxyHandler('/api/add_all_servers', 'post'));
 router.post('/remove_all_servers', addAccessToken, createProxyHandler('/api/remove_all_servers', 'post'));
-router.get('/ping', createProxyHandler('/api/ping', 'get'));
+router.get('/register', addAccessToken, createProxyHandler('/api/register', 'get'));
+router.get('/public/ping', createProxyHandler('/api/public/ping', 'get'));
+router.get('/ping', createProxyHandler('/api/ping', 'get')); // deprecated. Waiting for new HF main push
 router.post('/switch_github_branch/:branch', addAccessToken, createProxyHandlerWithParams('/api/switch_github_branch/:branch', 'post'));
 
 module.exports = router;
