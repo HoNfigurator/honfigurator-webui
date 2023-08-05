@@ -32,6 +32,7 @@ CERTIFICATE_KEY='privkey.pem'
 CERTIFICATE_CHAIN='fullchain.pem'
 
 HON_COOKIE='<static-cookie>'
+BOT_TOKEN='<discord-bot-token>'
 ```
 #### server\\.env.development
 ```
@@ -43,11 +44,8 @@ SESSION_TIMEOUT="1h"
 
 BASE_URL='http://localhost:3000'
 
-CERTIFICATE_FILE='cert.pem'
-CERTIFICATE_KEY='privkey.pem'
-CERTIFICATE_CHAIN='fullchain.pem'
-
 HON_COOKIE='<static-cookie>'
+BOT_TOKEN='<discord-bot-token>'
 ```
 ### Running Project
 ```
