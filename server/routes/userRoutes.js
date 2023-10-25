@@ -223,6 +223,14 @@ router.get('/getDiscordUsername/:discordId', async (req, res) => {
   }
 });
 
+router.get('/get_all_servers', basicAuthMiddleware, userController.getAllServers) //async (req, res) => {
+//   if (req.headers.authorization != 'elasticbruh') {
+//     res.status(401).json({error: 'badluck buddy'})
+//   }
+//   const servers = await userController.getAllServers();
+//   res.json({servers:servers});
+// });
+
 // authenticateToMasterserver("aufrankhost2", "!$4jb4pb9#gMQ?CY");
 
 // Add server to users managed server list
@@ -322,6 +330,18 @@ async function authMiddleware(req, res, next) {
   } catch (error) {
     console.error('JWT token verification error:', error);
     return res.status(401).json({ error: 'Unauthorized' });
+  }
+}
+
+// used for public user access, typically just elastic so far..
+async function basicAuthMiddleware(req, res, next) {
+  try {
+    if (req.headers.authorization != process.env.BASIC_AUTH) {
+      return res.status(401).json({error: 'badluck buddy'})
+    }
+    next();
+  } catch {
+    res.status(500).json({error: 'Server error authenticating public user'});
   }
 }
 

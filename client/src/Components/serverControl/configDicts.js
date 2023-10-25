@@ -43,6 +43,12 @@ export const honData = {
         options: ["AU", "BR", "EU", "RU", "SEA", "TH", "USE", "USW", "NEWERTH"],
         section: "Basic Settings"
     },
+    "man_use_cowmaster": {
+        label: "Server Pre-Caching (recommended)",
+        tooltip: "This significantly reduces the RAM usage on Linux.",
+        type: "checkbox",
+        section: "Advanced Settings"
+    },
     "svr_priority": {
         label: "Server Priority",
         tooltip: "Select the server priority",
@@ -61,6 +67,12 @@ export const honData = {
         label: "Max Servers Start at Once",
         tooltip: "Maximum number of servers to start at once. This will \"stagger start\". The less servers that start at a time, the less disruption to other running games.",
         type: "int",
+        section: "Advanced Settings"
+    },
+    "svr_restart_between_games": {
+        label: "Reset Server Instance Between Games",
+        tooltip: "This is recommended when 'Server Pre-Caching' is enabled. Causes each HoN server instance to reset after a completed game.",
+        type: "checkbox",
         section: "Advanced Settings"
     },
     "svr_enableProxy": {

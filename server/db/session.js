@@ -136,6 +136,17 @@ async function deleteServerForUser(user_id, name) {
   });
 }
 
+async function getAllServersFromDatabase() {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT DISTINCT(address),name, user_id FROM servers', (err, rows) => {
+      if (err) {
+        return reject(new CustomError(500, `Error getting server data: ${err.message}`));
+      }
+      resolve(rows);
+    });
+  });
+}
+
 module.exports = {
   createUser,
   getUserDataFromDatabase,
@@ -144,5 +155,6 @@ module.exports = {
   createServerForUser,
   checkForExistingServer,
   updateServerForUser,
-  deleteServerForUser
+  deleteServerForUser,
+  getAllServersFromDatabase
 };

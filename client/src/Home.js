@@ -283,7 +283,7 @@ function Home() {
               title="Autoping Port"
               value={
                 publicPorts?.autoping
-                  ? publicPorts.autoping.toString()
+                  ? publicPorts.autoping.toString() + ' UDP'
                   : 'Loading...'
               }
             />
@@ -293,7 +293,7 @@ function Home() {
               title="Public Game Ports"
               value={
                 publicPorts?.game?.length && publicPorts?.voice?.length
-                  ? `${Math.min(...publicPorts.game)}-${Math.max(...publicPorts.game)}`
+                  ? `${Math.min(...publicPorts.game)}-${Math.max(...publicPorts.game)}` + ' UDP'
                   : 'Loading...'
               }
             />
@@ -303,7 +303,7 @@ function Home() {
               title="Public Voice Ports"
               value={
                 publicPorts?.game?.length && publicPorts?.voice?.length
-                  ? `${Math.min(...publicPorts.voice)}-${Math.max(...publicPorts.voice)}`
+                  ? `${Math.min(...publicPorts.voice)}-${Math.max(...publicPorts.voice)}` + ' UDP'
                   : 'Loading...'
               }
             />

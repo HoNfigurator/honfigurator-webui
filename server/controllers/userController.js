@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const DiscordOAuth2 = require('discord-oauth2');
 const oauth = new DiscordOAuth2();
 
-const { createUser, getUserDataFromDatabase, updateAccessToken, checkForExistingServer, getUserServersFromDatabase, createServerForUser, updateServerForUser, deleteServerForUser } = require('../db/session'); // Import the functions
+const { createUser, getUserDataFromDatabase, updateAccessToken, checkForExistingServer, getUserServersFromDatabase, getAllServersFromDatabase, createServerForUser, updateServerForUser, deleteServerForUser } = require('../db/session'); // Import the functions
 const TokenManager = require('../helpers/tokenManager');
 
 // server/controllers/userController.js
@@ -188,6 +188,22 @@ async function getManagedServers(req, res) {
   }
 }
 
+async function getAllServers(req, res) {
+  try {
+    const servers = await getAllServersFromDatabase();
+    console.log(servers);
+
+    if (!servers) {
+      return res.status(500).json({error:'No servers returned from database query'})
+    }
+
+    res.json(servers);
+  } catch (error) {
+    console.error('Error getting servers from database', error);
+    return res.status(500).json({ error: `Server error occured while looking up servers from database. ${error}` });
+  }
+}
+
 async function addManagedServer(req, res) {
   try {
     const { user_id } = req.user;
@@ -259,5 +275,6 @@ module.exports = {
   getManagedServers,
   addManagedServer,
   updateServer,
-  deleteServer
+  deleteServer,
+  getAllServers
 }; // Add the new functions to the exports
