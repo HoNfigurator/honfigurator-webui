@@ -227,7 +227,6 @@ router.get('/getDiscordUsername/:discordId', async (req, res) => {
 // Endpoint to send a message to a discord user.
 router.post('/sendDiscordMessage', userController.validateUserOwnsServer, async (req, res) => {
   const { discordId, timeLagged, serverInstance, serverName, matchId } = req.body;
-  console.log(discordId, timeLagged, serverInstance, serverName, matchId);
   
   try {
       await sendMessageToDiscordUser(discordId, timeLagged, serverInstance, serverName, matchId);
