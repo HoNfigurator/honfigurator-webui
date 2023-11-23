@@ -3,6 +3,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const DiscordOAuth2 = require('discord-oauth2');
 const oauth = new DiscordOAuth2();
+const dns = require('dns').promises;
 
 const { createUser, getUserDataFromDatabase, getServerByIDAndName, updateAccessToken, checkForExistingServer, getUserServersFromDatabase, getAllServersFromDatabase, createServerForUser, updateServerForUser, deleteServerForUser } = require('../db/session'); // Import the functions
 const TokenManager = require('../helpers/tokenManager');
@@ -186,6 +187,47 @@ function getIPv4Address(ip) {
   return ip;
 }
 
+function isIpAddress(address) {
+  // Regular expression for validating an IPv4 address
+  const ipv4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  return ipv4Regex.test(address);
+}
+
+// Cache object
+const dnsResolutionCache = {};
+
+// Cache expiry time in milliseconds (e.g., 1 hour)
+const CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+
+// Function to check if cache entry is expired
+function isCacheExpired(entry) {
+  if (!entry) return true;
+  const now = new Date().getTime();
+  return now - entry.timestamp > CACHE_EXPIRY_MS;
+}
+
+// Function to resolve DNS with caching and expiry
+async function resolveDNSWithCache(dnsName) {
+  const cacheEntry = dnsResolutionCache[dnsName];
+
+  // Check cache first and validate if it's not expired
+  if (cacheEntry && !isCacheExpired(cacheEntry)) {
+    return cacheEntry.resolvedIps;
+  }
+
+  // Resolve DNS and update cache
+  try {
+    const resolvedIps = await dns.resolve4(dnsName);
+    dnsResolutionCache[dnsName] = {
+      resolvedIps,
+      timestamp: new Date().getTime()
+    };
+    return resolvedIps;
+  } catch (error) {
+    throw error;
+  }
+}
+
 async function validateUserOwnsServer(req, res, next) {
   try {
     const { discordId } = req.body;
@@ -205,11 +247,32 @@ async function validateUserOwnsServer(req, res, next) {
 
     // Get the IP address from the request
     // It might be req.ip or check for forwarded headers in case of proxy
-    const reqIp = getIPv4Address(req.ip || req.connection.remoteAddress || 
+    const reqIp = getIPv4Address(req.ip || req.connection.remoteAddress ||
       (req.headers['x-forwarded-for'] || '').split(',').pop().trim());
 
-    // Check if the request IP matches any of the server IPs
-    const isAuthorized = servers.some(server => server.address === reqIp);
+    // Function to check if the server IP matches the request IP
+    const checkServerIp = async (server) => {
+      if (server.address === reqIp) {
+        return true;
+      }
+
+      // Check if the server address is a DNS name
+      if (!isIpAddress(server.address)) {
+        try {
+          const resolvedIps = await resolveDNSWithCache(server.address);
+          return resolvedIps.includes(reqIp);
+        } catch (error) {
+          console.error(`Error resolving DNS for ${server.address}: ${error}`);
+          return false;
+        }
+      }
+      
+      return false;
+    };
+
+    // Check if the request IP matches any of the server IPs or resolved DNS names
+    const authorizationChecks = await Promise.all(servers.map(checkServerIp));
+    const isAuthorized = authorizationChecks.includes(true);
 
     if (!isAuthorized) {
       console.log(`Unauthorized access attempt by IP: ${reqIp}`);
