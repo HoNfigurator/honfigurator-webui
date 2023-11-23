@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const DiscordOAuth2 = require('discord-oauth2');
 const oauth = new DiscordOAuth2();
 
-const { createUser, getUserDataFromDatabase, updateAccessToken, checkForExistingServer, getUserServersFromDatabase, getAllServersFromDatabase, createServerForUser, updateServerForUser, deleteServerForUser } = require('../db/session'); // Import the functions
+const { createUser, getUserDataFromDatabase, getServerByIDAndName, updateAccessToken, checkForExistingServer, getUserServersFromDatabase, getAllServersFromDatabase, createServerForUser, updateServerForUser, deleteServerForUser } = require('../db/session'); // Import the functions
 const TokenManager = require('../helpers/tokenManager');
 
 // server/controllers/userController.js
@@ -176,6 +176,54 @@ async function getCurrentUser(req, res) {
   }
 }
 
+function getIPv4Address(ip) {
+  if (ip === '::1') {
+      return '127.0.0.1';
+  }
+  if (ip.includes('::ffff:')) {
+      return ip.split('::ffff:')[1];
+  }
+  return ip;
+}
+
+async function validateUserOwnsServer(req, res, next) {
+  try {
+    const { discordId } = req.body;
+
+    if (!discordId) {
+      console.log("No discord ID in request body.");
+      return res.status(401).json({ error: 'No discord ID was provided in the request body.' });
+    }
+
+    // Retrieve the list of servers owned by the user from the database
+    const servers = await getUserServersFromDatabase( discordId );
+
+    if (!servers || servers.length === 0) {
+      console.log(`No servers found for user: ${discordId}`);
+      return res.status(401).json({ error: 'Unauthorized - No servers associated with this user.' });
+    }
+
+    // Get the IP address from the request
+    // It might be req.ip or check for forwarded headers in case of proxy
+    const reqIp = getIPv4Address(req.ip || req.connection.remoteAddress || 
+      (req.headers['x-forwarded-for'] || '').split(',').pop().trim());
+
+    // Check if the request IP matches any of the server IPs
+    const isAuthorized = servers.some(server => server.address === reqIp);
+
+    if (!isAuthorized) {
+      console.log(`Unauthorized access attempt by IP: ${reqIp}`);
+      return res.status(401).json({ error: 'Unauthorized - IP address does not match any known servers for this user.' });
+    }
+
+    // If the IP matches, invoke the next middleware
+    next();
+  } catch (error) {
+    console.error('Error in validateUserOwnsServer:', error);
+    return res.status(500).json({ error: `Server error occurred while validating the user server ownership. ${error}` });
+  }
+}
+
 async function getManagedServers(req, res) {
   try {
     const { user_id } = req.user;
@@ -270,6 +318,7 @@ module.exports = {
   getCurrentUser,
   updateAccessToken,
   getUserDataFromDatabase,
+  validateUserOwnsServer,
   reauthenticateUser,
   oauth,
   getManagedServers,

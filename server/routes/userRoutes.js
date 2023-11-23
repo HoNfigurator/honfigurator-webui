@@ -9,6 +9,7 @@ const TokenManager = require('../helpers/tokenManager');
 const qs = require('querystring');
 const { oauth } = require('../controllers/userController');
 const { unserialize } = require('php-unserialize'); // Import the library at the top of your file
+const { sendMessageToDiscordUser } = require('../controllers/discordController');
 
 const router = express.Router();
 
@@ -220,6 +221,20 @@ router.get('/getDiscordUsername/:discordId', async (req, res) => {
   } catch (error) {
     console.error(`Failed to get Discord username for ID: ${discordId}`);
     res.status(500).json({ error: 'Failed to get Discord username.' });
+  }
+});
+
+// Endpoint to send a message to a discord user.
+router.post('/sendDiscordMessage', userController.validateUserOwnsServer, async (req, res) => {
+  const { discordId, timeLagged, serverInstance, serverName, matchId } = req.body;
+  console.log(discordId, timeLagged, serverInstance, serverName, matchId);
+  
+  try {
+      await sendMessageToDiscordUser(discordId, timeLagged, serverInstance, serverName, matchId);
+      res.status(200).json({ message: 'Message sent successfully.' });
+  } catch (error) {
+      console.error(`Failed to send message: ${error.message}`);
+      res.status(500).json({ error: 'Failed to send message.' });
   }
 });
 

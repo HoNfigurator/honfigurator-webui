@@ -1,24 +1,24 @@
 // index.js
 const path = require('path');
+const envFilePath = path.join(__dirname, `.env.${process.env.NODE_ENV || 'development'}`);
 const dotenv = require('dotenv');
+dotenv.config({ path: envFilePath });
 const fs = require('fs');
 const https = require('https');
-const express = require('express');
-const bodyParser = require('body-parser');
 const userRoutes = require('../routes/userRoutes');
 const serverRoutes = require('../routes/serverRoutes');
 
-const envFilePath = path.join(__dirname, `.env.${process.env.NODE_ENV || 'development'}`);
-dotenv.config({ path: envFilePath });
 console.log(envFilePath);
 
 console.log(process.env.DISCORD_CLIENT_ID);
 
+const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3001;
-app.use(bodyParser.json());
+
+app.use(express.json());
+
 app.use('/api-ui', userRoutes);
-app.use(express.json()); // Add this line
 app.use('/api', serverRoutes);
 
 

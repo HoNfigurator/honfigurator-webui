@@ -76,6 +76,17 @@ async function getUserDataFromDatabase({ user_id, discord_id }) {
   });
 }
 
+async function getServerByIDAndName(discord_id, server_name) {
+  return new Promise((resolve, reject) => {
+    db.all('SELECT * FROM servers WHERE user_id = ? and name = ?', [user_id, server_name], (err, rows) => {
+      if (err) {
+        return reject(new CustomError(500, `Error finding matching servers: ${err.message}`));
+      }
+      resolve(rows);
+    });
+  });
+}
+
 async function getUserServersFromDatabase(user_id) {
   return new Promise((resolve, reject) => {
     db.all('SELECT * FROM servers WHERE user_id = ?', [user_id], (err, rows) => {
@@ -150,6 +161,7 @@ async function getAllServersFromDatabase() {
 module.exports = {
   createUser,
   getUserDataFromDatabase,
+  getServerByIDAndName,
   updateAccessToken,
   getUserServersFromDatabase,
   createServerForUser,
