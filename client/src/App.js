@@ -213,6 +213,8 @@ function AppContent() {
 
   const serverStatusIndicator = getServerStatusIndicator(selectedServerStatus);
 
+  const showReplaysSider = !authenticated && location.pathname === "/replays";
+
   // const { hasError } = useContext(TaskStatusContext);
 
   return (
@@ -289,6 +291,25 @@ function AppContent() {
                 </Menu.Item>
               </Menu>
             </Sider>
+          ) }
+          {showReplaysSider && (
+            <Sider
+              width={200}
+              className="site-layout-background"
+              style={{
+                height: "100%",
+                minHeight: `calc(100vh - ${headerHeight}px)`
+              }}
+            >
+              <Menu
+                mode="inline"
+                style={{ height: "100%", borderRight: 0 }}
+              >
+                <Menu.Item key="back-to-login">
+                  <Link to="/login">Back to Login</Link>
+                </Menu.Item>
+              </Menu>
+            </Sider>
           )}
           <Layout style={{ minHeight: `calc(100vh - ${headerHeight}px)`, padding: "24px" }}>
             <Content style={{ minHeight: "100%" }}>
@@ -359,7 +380,7 @@ function AppContent() {
                     />
                     <Route
                       path="/replays"
-                      element={<RequireAuth sessionToken={token} component={GameReplaysSearchPage} />}
+                      element={<GameReplaysSearchPage />}
                     />
                     <Route
                       path="/troubleshooting"

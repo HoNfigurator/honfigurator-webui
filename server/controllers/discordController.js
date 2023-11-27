@@ -16,6 +16,7 @@ async function sendMessageToDiscordUser(discordId, timeLagged, serverInstance, s
             // Create an embed with fields for each piece of information
             const embed = new EmbedBuilder()
                 .setColor('#FF5733') // Set the color of the embed
+                .setURL(`https://elastic-node2.honfigurator.app/app/dashboards#/view/613a9d50-6f67-11ee-95e7-01e41b481550?_g=()&_a=(columns:!(),filters:!(),interval:auto,query:(language:kuery,query:'Match.ID.keyword%20:%20%22${matchId}%22%20'))`)
                 .setTitle('Server Side Lag Detected') // Set the title of the embed
                 .setDescription('I’ve detected an unusual lag spike on your server.') // Set the description of the embed
                 .addFields(

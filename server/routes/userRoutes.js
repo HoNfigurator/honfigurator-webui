@@ -161,10 +161,10 @@ router.get('/request_replay/:matchId', async (req, res) => {
 
     client.on('data', (data) => {
       const messageType = data[2] + data[3] * 256;  // Calculate the 16-bit integer value manually
-      console.log(`Message type: ${messageType.toString(16).padStart(4, '0')}`);
+      console.log(`[RESP] Message type: ${messageType.toString(16).padStart(4, '0')}`);
 
       if (messageType === 0x1c01) {
-        console.log("Chat authentication request failed.")
+        console.log("[RESP] Chat authentication request failed.")
         res.status(401).json({message:"Chat authentication request failed"});
         client.end();
         client.destroy();
