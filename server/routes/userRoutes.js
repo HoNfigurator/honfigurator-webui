@@ -68,7 +68,7 @@ router.get('/kongor-health', (req, res) => {
 });
 
 
-router.get('/get_match_stats/:matchId', authMiddleware, discordAuthMiddleware, async (req, res) => {
+router.get('/get_match_stats/:matchId', async (req, res) => {
   let matchId = req.params.matchId;
   matchId = matchId.replace(/^[mM]/, '');
   const sessionCookie = process.env.HON_COOKIE;
