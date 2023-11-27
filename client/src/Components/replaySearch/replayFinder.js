@@ -63,7 +63,7 @@ const DownloadButton = ({ s3_url, match_id }) => {
   };
 
   const handleDownloadClick = () => {
-    window.location.href = s3_url;
+    window.location.href = s3_url.replace('http:', 'https:');
   };
 
   useEffect(() => {
