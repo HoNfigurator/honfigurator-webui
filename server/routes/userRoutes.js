@@ -9,7 +9,7 @@ const TokenManager = require('../helpers/tokenManager');
 const qs = require('querystring');
 const { oauth } = require('../controllers/userController');
 const { unserialize } = require('php-unserialize'); // Import the library at the top of your file
-const { sendMessageToDiscordUser } = require('../controllers/discordController');
+const { sendMessageToDiscordUser, createEmbedMessage } = require('../controllers/discordController');
 
 const router = express.Router();
 
@@ -226,10 +226,41 @@ router.get('/getDiscordUsername/:discordId', async (req, res) => {
 
 // Endpoint to send a message to a discord user.
 router.post('/sendDiscordMessage', userController.validateUserOwnsServer, async (req, res) => {
-  const { discordId, timeLagged, serverInstance, serverName, matchId } = req.body;
+  const { discordId, title, description, serverName, serverInstance, matchId, type, timeLagged, timeCrashed, gamePhase } = req.body;
   
   try {
-      await sendMessageToDiscordUser(discordId, timeLagged, serverInstance, serverName, matchId);
+      let embed;
+      if (type === 'lag' || timeLagged) {
+        embed = createEmbedMessage(
+          'Server Side Lag Detected', // Title
+          'I’ve detected an unusual lag spike on your server.', // Description
+          [ // Fields
+              { name: 'Server Name', value: `${serverName}-${serverInstance}`, inline: true },
+              { name: 'Match ID', value: matchId.toString(), inline: true },
+              { name: 'Total Duration of Lag', value: `${timeLagged} seconds`, inline: true }
+          ],
+          'https://i.ibb.co/YdSTNV9/Hon-Figurator-Icon1c.png', // Thumbnail URL
+          'Server side lag is usually to do with the CPU performance, but can also be caused by very active disk I/O. If problems continue, you can reduce your total server count.' // Footer Text
+        );
+      } else if (type === 'crash' || timeCrashed) {
+        console.log('sending crash message, variables are as follows: ', discordId, title, description, serverName, matchId, type, timeLagged, timeCrashed, gamePhase);
+        embed = createEmbedMessage(
+          'Server Crash', // Title
+          'A server instance has crashed while in game.', // Description
+          [ // Fields
+              { name: 'Server Name', value: `${serverName}-${serverInstance}`, inline: true },
+              { name: 'Match ID', value: matchId.toString(), inline: true },
+              { name: 'Time of Crash', value: timeCrashed, inline: true },
+              { name: 'Game Phase', value: gamePhase, inline: true}
+          ],
+          'https://i.ibb.co/YdSTNV9/Hon-Figurator-Icon1c.png', // Thumbnail URL
+          'Crashes are known to occur occasionally, this message is to notify you in case something is wrong.' // Footer Text
+        );
+      }
+      if (!embed) {
+        res.status(500).json({ error: 'No "type" provided. Please provide either "lag" or "crash"' })
+      }
+      await sendMessageToDiscordUser(discordId, embed);
       res.status(200).json({ message: 'Message sent successfully.' });
   } catch (error) {
       console.error(`Failed to send message: ${error.message}`);

@@ -5,37 +5,45 @@ myIntents.add(IntentsBitField.Flags.GuildPresences, IntentsBitField.Flags.GuildM
 const client = new Client({ intents: '' });
 client.login(process.env.BOT_TOKEN);
 
-async function sendMessageToDiscordUser(discordId, timeLagged, serverInstance, serverName, matchId) {
+async function validateUser(discordId) {
+    const user = await client.users.fetch(discordId);
+    if (!user) {
+        throw new Error('User not found');
+    }
+    return user;
+}
+
+function createEmbedMessage(title, description, fields, thumbnailUrl, footerText) {
+    let embed = new EmbedBuilder()
+        .setColor('#FF5733') // You can make this a parameter too if you want different colors for different messages
+        .setTitle(title)
+        .setDescription(description);
+
+    if (fields && fields.length > 0) {
+        embed.addFields(...fields);
+    }
+
+    if (thumbnailUrl) {
+        embed.setThumbnail(thumbnailUrl);
+    }
+
+    if (footerText) {
+        embed.setFooter({ text: footerText });
+    }
+
+    return embed;
+}
+
+
+async function sendMessageToDiscordUser(discordId, embed) {
     try {
-        // Validate that the provided discordId corresponds to the stored server + discord owner ID
-        
-        const user = await client.users.fetch(discordId);
-        if (user) {
-            const timeLaggedSeconds = (timeLagged / 1000).toFixed(2); // Convert to seconds
-
-            // Create an embed with fields for each piece of information
-            const embed = new EmbedBuilder()
-                .setColor('#FF5733') // Set the color of the embed
-                .setURL(`https://elastic-node2.honfigurator.app/app/dashboards#/view/613a9d50-6f67-11ee-95e7-01e41b481550?_g=()&_a=(columns:!(),filters:!(),interval:auto,query:(language:kuery,query:'Match.ID.keyword%20:%20%22${matchId}%22%20'))`)
-                .setTitle('Server Side Lag Detected') // Set the title of the embed
-                .setDescription('I’ve detected an unusual lag spike on your server.') // Set the description of the embed
-                .addFields(
-                    { name: 'Server Name', value: serverName, inline: true },
-                    { name: 'Match ID', value: matchId.toString(), inline: true },
-                    { name: 'Total Duration of Lag', value: `${timeLaggedSeconds} seconds`, inline: true }
-                )
-                .setThumbnail('https://i.ibb.co/YdSTNV9/Hon-Figurator-Icon1c.png')
-                .setFooter({text:'Server side lag is usually to do with the CPU performance, but can also be caused by very active disk I/O. If problems continue, you can reduce your total server count.'});
-
-            // Send the embed to the user
-            await user.send({ embeds: [embed] });
-        } else {
-            throw new Error('User not found');
-        }
+        const user = await validateUser(discordId);
+        await user.send({ embeds: [embed] });
     } catch (error) {
         console.error(`Error in sending message: ${error}`);
-        throw error; // rethrow the error to be handled by the caller
+        throw error;
     }
 }
 
-module.exports = { sendMessageToDiscordUser };
+
+module.exports = { sendMessageToDiscordUser, createEmbedMessage };
