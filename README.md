@@ -73,7 +73,7 @@ npm run build
 ```
 Deploy the built website contents from ``build`` to your webroot, IE using Nginx and the provided ``nginx.conf`` file, deploy to ``/var/www/html/honfigurator``.
 
-#### Option 2 (recommended). Create a service file.
+#### Option 1 (recommended). Create a service file.
 ```
 sudo tee /etc/systemd/system/honfigurator.service <<EOF
 [Unit]
