@@ -1,23 +1,23 @@
 # Installing
 ### Creating configuration files
-#### client\\.env
+#### client/.env
 ```
 REACT_APP_DISCORD_OWNER_ID_URL=https://www.businessinsider.com/guides/tech/discord-id#:~:text=To%20find%20a%20user's%20Discord,sidebar%20and%20select%20Copy%20ID
 REACT_APP_DISCORD_CLIENT_ID=1096750568388702228
 REACT_APP_DISCORD_SCOPE=identify email
 ```
-#### client\\.env.production
+#### client/.env.production
 ```
 REACT_APP_DISCORD_CALLBACK_URI=https://management.honfigurator.app:3001/api-ui/user/auth/discord/callback
 REACT_APP_BACKEND_BASE_URL=https://localhost:3001
 REACT_APP_CA_FILE='fullchain.pem'
 ```
-#### client\\.env.development
+#### client/.env.development
 ```
 REACT_APP_DISCORD_CALLBACK_URI=http://localhost:3001/api-ui/user/auth/discord/callback
 REACT_APP_BACKEND_BASE_URL=http://localhost:3001```
 ```
-#### server\\.env.production
+#### server/.env.production
 ```
 jwtSecret='<secret>'
 DISCORD_CLIENT_ID='1096750568388702228'
@@ -34,7 +34,7 @@ CERTIFICATE_CHAIN='fullchain.pem' # /etc/letsencrypt/live/<FQDN>/fullchain.pem
 HON_COOKIE='<static-cookie>'
 BOT_TOKEN='<discord-bot-token>'
 ```
-#### server\\.env.development
+#### server/.env.development
 ```
 jwtSecret='<secret>'
 DISCORD_CLIENT_ID='1096750568388702228'
@@ -47,7 +47,7 @@ BASE_URL='http://localhost:3000'
 HON_COOKIE='<static-cookie>'
 BOT_TOKEN='<discord-bot-token>'
 ```
-### Running Project (Development)
+### Running Project Locally (Development)
 ```
 cd honfigurator-webui\server
 npm install
@@ -99,4 +99,11 @@ Not recommended as certificate renewals will not trigger a restart, also if ther
 cd honfigurator-webui/server
 NODE_ENV=production
 node app.js
+```
+
+### Post Procedure
+Ensure firewall rules are opened.
+```
+sudo ufw allow 443 # Web traffic
+sudo ufw allow 3001 # API traffic
 ```
