@@ -264,6 +264,7 @@ router.get('/get_all_github_branches', addAccessToken, createProxyHandlerWithPar
 router.get('/get_all_public_ports', addAccessToken, createProxyHandlerWithParams('/api/get_all_public_ports', 'get'));
 router.get('/get_tasks_status', addAccessToken, createProxyHandlerWithParams('/api/get_tasks_status', 'get'));
 router.get('/get_commit_date', addAccessToken, createProxyHandler('/api/get_commit_date', 'get'));
+router.get('/get_disk_usage', addAccessToken, createProxyHandler('/api/get_disk_usage', 'get'));
 router.get('/get_honfigurator_log_entries/:num', addAccessToken, createProxyHandlerWithParams('/api/get_honfigurator_log_entries/:num', 'get'));
 router.get(
     '/get_honfigurator_log_file',

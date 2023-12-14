@@ -28,7 +28,8 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
       axiosInstanceServer.get(`/get_all_github_branches?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_all_public_ports?_t=${Date.now()}`),
       axiosInstanceServer.get(`/get_hon_version?_t=${Date.now()}`),
-      axiosInstanceServer.get(`/get_commit_date?_t=${Date.now()}`)
+      axiosInstanceServer.get(`/get_commit_date?_t=${Date.now()}`),
+      axiosInstanceServer.get(`/get_disk_usage?_t=${Date.now()}`)
     ];
 
     const responses = await Promise.allSettled(requests);
@@ -56,7 +57,12 @@ async function fetchStats(selectedServerValue, selectedServerPort) {
         voice: data[15].public_voice_ports || [],
       },
       honVersion: data[16].data || data[16] || null,
-      commitDate: data[17].data || null
+      commitDate: data[17].data || null,
+      diskUsage: {
+        usedSpace: data[18].used_space || null,
+        totalSpace: data[18].total_space || null,
+        usagePercentage: data[18].usage_percentage | null
+      }
 
     };
   } catch (error) {
@@ -108,6 +114,11 @@ function Home() {
   });
   const [honVersion, setHonVersion] = useState(null);
   const [commitDate, setCommitDate] = useState(null);
+  const [diskUsage, setDiskUsage] = useState({
+    usedSpace: null,
+    totalSpace: null,
+    usagePercentage: null,
+  });
 
   const handleBranchChange = async (branch) => {
     if (selectedServerValue && selectedServerPort) {
@@ -166,6 +177,7 @@ function Home() {
           setPublicPorts(data.publicPorts);
           setHonVersion(data.honVersion);
           setCommitDate(data.commitDate);
+          setDiskUsage(data.diskUsage);
         }
       }
       // Fetch stats once on load
@@ -243,6 +255,28 @@ function Home() {
         </Col>
       </Row>
       <Row gutter={[16, 16]} style={{ marginBottom: '20px' }}>
+        <Col xs={24} md={8}>
+          <Statistic title="Disk Usage" value=' ' />
+          <Progress
+            type="circle"
+            percent={diskUsage.usedSpace && diskUsage.totalSpace
+              ? (diskUsage.usedSpace / diskUsage.totalSpace) * 100
+              : 0}
+            format={(percent) => {
+              if (typeof diskUsage.usedSpace === 'number') {
+                return `${diskUsage.usedSpace.toFixed(2)}GB / ${diskUsage.totalSpace || '-'}GB`;
+              } else {
+                return `${diskUsage.usedSpace || '-'} / ${diskUsage.totalSpace || '-'}GB`;
+              }
+            }}
+            strokeColor={{
+              '0%': '#108ee9',
+              '100%': '#87d068',
+            }}
+            size={120}
+            style={{ marginTop: '-30px' }}
+          />
+        </Col>
         <Col xs={24} md={8}>
           <Statistic title="Memory Usage" value=' ' />
           <Progress
