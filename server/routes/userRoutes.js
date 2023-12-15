@@ -216,8 +216,9 @@ router.get('/getDiscordUsername/:discordId', async (req, res) => {
   try {
     const response = await axios.get(url, { headers });
     const userData = response.data;
-    const username = userData.username;
-    res.status(200).json({ username });
+    const username = userData.username; // the username to log on
+    const globalName = userData.global_name; // the display name
+    res.status(200).json({ globalName });
   } catch (error) {
     console.error(`Failed to get Discord username for ID: ${discordId}`);
     res.status(500).json({ error: 'Failed to get Discord username.' });
