@@ -264,7 +264,7 @@ router.post('/sendDiscordMessage', userController.validateUserOwnsServer, async 
           `Server Disk Space (${severity})`, // Title URL
           'A server instance is running low on disk space.', // Description
           [ // Fields
-              { name: 'Server Name', value: `${serverName}-${serverInstance}`, inline: true },
+              { name: 'Server Name', value: serverName, inline: true },
               { name: 'Disk Utilisation', value: diskUtilisation, inline: true}
           ],
           '', // Title URL
