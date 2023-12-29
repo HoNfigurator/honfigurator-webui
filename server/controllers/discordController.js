@@ -13,7 +13,7 @@ async function validateUser(discordId) {
     return user;
 }
 
-function createEmbedMessage(title, description, fields, thumbnailUrl, footerText) {
+function createEmbedMessage(title, description, fields, url, thumbnailUrl, footerText) {
     let embed = new EmbedBuilder()
         .setColor('#FF5733') // You can make this a parameter too if you want different colors for different messages
         .setTitle(title)
@@ -25,6 +25,10 @@ function createEmbedMessage(title, description, fields, thumbnailUrl, footerText
 
     if (thumbnailUrl) {
         embed.setThumbnail(thumbnailUrl);
+    }
+
+    if (url) {
+        embed.setURL(url);
     }
 
     if (footerText) {

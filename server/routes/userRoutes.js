@@ -240,13 +240,14 @@ router.post('/sendDiscordMessage', userController.validateUserOwnsServer, async 
               { name: 'Match ID', value: matchId.toString(), inline: true },
               { name: 'Total Duration of Lag', value: `${timeLagged} seconds`, inline: true }
           ],
+          `https://elastic.honfigurator.app/app/dashboards#/view/613a9d50-6f67-11ee-95e7-01e41b481550?_g=()&_a=(columns:!(),filters:!(),interval:auto,query:(language:kuery,query:'Match.ID.keyword%20:%20%22${matchId}%22%20'))`, // Title URL
           'https://i.ibb.co/YdSTNV9/Hon-Figurator-Icon1c.png', // Thumbnail URL
           'Server side lag is usually to do with the CPU performance, but can also be caused by very active disk I/O. If problems continue, you can reduce your total server count.' // Footer Text
         );
       } else if (type === 'crash' || timeCrashed) {
         console.log('sending crash message, variables are as follows: ', discordId, title, description, serverName, matchId, type, timeLagged, timeCrashed, gamePhase);
         embed = createEmbedMessage(
-          'Server Crash', // Title
+          'Server Crash', // Title URL
           'A server instance has crashed while in game.', // Description
           [ // Fields
               { name: 'Server Name', value: `${serverName}-${serverInstance}`, inline: true },
@@ -254,6 +255,7 @@ router.post('/sendDiscordMessage', userController.validateUserOwnsServer, async 
               { name: 'Time of Crash', value: timeCrashed, inline: true },
               { name: 'Game Phase', value: gamePhase, inline: true}
           ],
+          '', // Title URL
           'https://i.ibb.co/YdSTNV9/Hon-Figurator-Icon1c.png', // Thumbnail URL
           'Crashes are known to occur occasionally, this message is to notify you in case something is wrong.' // Footer Text
         );
