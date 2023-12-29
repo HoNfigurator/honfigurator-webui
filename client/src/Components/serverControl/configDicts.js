@@ -18,12 +18,6 @@ export const honData = {
         options: ["api.kongor.online"],
         section: "Basic Settings"
     },
-    "svr_name": {
-        label: "Server Name",
-        tooltip: "Enter the name of your server. This is how it appears ingame.",
-        type: "input",
-        section: "Basic Settings"
-    },
     "svr_login": {
         label: "HoN Login",
         tooltip: "Enter your HoN username. This MUST be unique per server. Used to authenticate to game services.",
@@ -37,11 +31,37 @@ export const honData = {
         section: "Basic Settings"
     },
     "svr_location": {
-        label: "Server Location",
+        label: "Server Region",
         tooltip: "Select the server location (which region is the server in?)",
         type: "select",
         options: ["AU", "BR", "EU", "RU", "SEA", "TH", "USE", "USW", "NEWERTH"],
         section: "Basic Settings"
+    },
+    "svr_override_state": {
+        label: "Override Server Location",
+        tooltip: "This will attempt to self-discover the server state (location). This is recommended.",
+        type: "checkbox",
+        section: "Basic Settings"
+    },
+    "svr_state": {
+        label: "Server Location (State, Country or Town)",
+        tooltip: "Input the server state where the server is located. You may choose to leave this blank.",
+        type: "input",
+        section: "Basic Settings",
+        dependant_on: "svr_override_state",
+    },
+    "svr_override_suffix": {
+        label: "Override Server Name Suffix",
+        tooltip: "This will generate the server suffix using the owners discord nickname. This is recommended.",
+        type: "checkbox",
+        section: "Basic Settings"
+    },
+    "svr_suffix": {
+        label: "Server Name Suffix",
+        tooltip: "Enter the suffix for your server name.",
+        type: "input",
+        section: "Basic Settings",
+        dependant_on: "svr_override_suffix",
     },
     "man_use_cowmaster": {
         label: "Server Pre-Caching (recommended)",
