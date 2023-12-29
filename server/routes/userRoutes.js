@@ -227,7 +227,7 @@ router.get('/getDiscordUsername/:discordId', async (req, res) => {
 
 // Endpoint to send a message to a discord user.
 router.post('/sendDiscordMessage', userController.validateUserOwnsServer, async (req, res) => {
-  const { discordId, title, description, serverName, serverInstance, matchId, type, timeLagged, timeCrashed, gamePhase } = req.body;
+  const { discordId, title, description, serverName, serverInstance, diskUtilisation, severity, matchId, type, timeLagged, timeCrashed, gamePhase } = req.body;
   
   try {
       let embed;
@@ -258,6 +258,18 @@ router.post('/sendDiscordMessage', userController.validateUserOwnsServer, async 
           '', // Title URL
           'https://i.ibb.co/YdSTNV9/Hon-Figurator-Icon1c.png', // Thumbnail URL
           'Crashes are known to occur occasionally, this message is to notify you in case something is wrong.' // Footer Text
+        );
+      } else if (type === 'disk_space' || diskUtilisation) {
+        embed = createEmbedMessage(
+          `Server Disk Space (${severity})`, // Title URL
+          'A server instance is running low on disk space.', // Description
+          [ // Fields
+              { name: 'Server Name', value: `${serverName}-${serverInstance}`, inline: true },
+              { name: 'Disk Utilisation', value: diskUtilisation, inline: true}
+          ],
+          '', // Title URL
+          'https://i.ibb.co/YdSTNV9/Hon-Figurator-Icon1c.png', // Thumbnail URL
+          'Disk space grows primarily due to replay storage. Please ensure you have set up appropriate replay retention and log file cleanup at management.honfigurator.app.' // Footer Text
         );
       }
       if (!embed) {
