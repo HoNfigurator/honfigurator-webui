@@ -95,6 +95,12 @@ export const honData = {
         type: "checkbox",
         section: "Advanced Settings"
     },
+    "svr_beta_mode": {
+        label: "Test BETA patches",
+        tooltip: "This should be used prior to a patch release, to confirm the patch is applied cleanly and changes are as expected.",
+        type: "checkbox",
+        section: "Advanced Settings"
+    },
     "svr_enableProxy": {
         label: "Enable Proxy",
         tooltip: "Enable or disable the proxy",
