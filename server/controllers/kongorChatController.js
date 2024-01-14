@@ -84,11 +84,11 @@ function createHandshakePacket() {
     packet_data = Buffer.concat([packet_data, client_version_major]);
 
     let client_version_minor = Buffer.alloc(1);
-    client_version_minor.writeUInt8(10, 0);
+    client_version_minor.writeUInt8(11, 0);
     packet_data = Buffer.concat([packet_data, client_version_minor]);
 
     let client_version_micro = Buffer.alloc(1);
-    client_version_micro.writeUInt8(9, 0);
+    client_version_micro.writeUInt8(0, 0);
     packet_data = Buffer.concat([packet_data, client_version_micro]);
 
     let client_version_hotfix = Buffer.alloc(1);
