@@ -155,7 +155,7 @@ router.get('/request_replay/:matchId', async (req, res) => {
     client.connect(chat_port, chat_address, async () => {
       console.log('Connected to the remote server');
 
-      const handshake_packet = createHandshakePacket();
+      const handshake_packet = await createHandshakePacket();
       client.write(handshake_packet);
     });
 

@@ -1,3 +1,6 @@
+const axios = require('axios');
+const phpUnserialize = require('php-unserialize');
+
 const readInt = (buffer, offset) => {
     return [buffer.readInt32LE(offset), offset + 4];
 };
@@ -43,8 +46,34 @@ const parseReplayStatus = (data) => {
     return replayStatus;
 };
 
+async function obtainServerVersion() {
+    const url = "http://api.kongor.online/patcher/patcher.php";
+    const headers = {
+        "Accept": "*/*",
+        "Content-Type": "application/x-www-form-urlencoded",
+    };
+    const data = {
+        latest: "",
+        os: "wac",
+        arch: "x86_64"
+    };
+    try {
+        const response = await axios.post(url, data, { headers: headers });
+        if (response.status === 200) {
+            const parsed = phpUnserialize.unserialize(response.data);
+            console.log(`Version in replay request: ${parsed['latest']}`);
+            return parsed['latest'];
+        } else {
+            console.error("Error fetching version", response.status, response.data);
+            return null;
+        }
+    } catch (error) {
+        console.error("Error in obtainServerVersion", error);
+        return null;
+    }
+}
 
-function createHandshakePacket() {
+async function createHandshakePacket() {
     let packet_data = Buffer.alloc(2);
     packet_data.writeUInt16LE(0xC00, 0);
 
@@ -55,6 +84,8 @@ function createHandshakePacket() {
     packet_data = Buffer.concat([packet_data, Buffer.from(process.env.HON_COOKIE, 'utf-8'), Buffer.from('\0')]);
     packet_data = Buffer.concat([packet_data, Buffer.from('222.222.222.222', 'utf-8'), Buffer.from('\0')]);
     packet_data = Buffer.concat([packet_data, Buffer.from(process.env.HON_COOKIE, 'utf-8'), Buffer.from('\0')]);
+
+    let client_version = await obtainServerVersion();
 
     let chat_protocol_version = Buffer.alloc(4);
     chat_protocol_version.writeUInt32LE(68, 0);
@@ -79,21 +110,25 @@ function createHandshakePacket() {
     packet_data = Buffer.concat([packet_data, Buffer.from('wac', 'utf-8'), Buffer.from('\0')]);
     packet_data = Buffer.concat([packet_data, Buffer.from('x86_64', 'utf-8'), Buffer.from('\0')]);
 
-    let client_version_major = Buffer.alloc(1);
-    client_version_major.writeUInt8(4, 0);
-    packet_data = Buffer.concat([packet_data, client_version_major]);
+    if (client_version) {
+        // Assuming the client_version is a string like "4.11.1.0"
+        const versionParts = client_version.split('.').map(part => parseInt(part, 10));
+        let client_version_major = Buffer.alloc(1);
+        client_version_major.writeUInt8(versionParts[0], 0);
+        packet_data = Buffer.concat([packet_data, client_version_major]);
 
-    let client_version_minor = Buffer.alloc(1);
-    client_version_minor.writeUInt8(11, 0);
-    packet_data = Buffer.concat([packet_data, client_version_minor]);
+        let client_version_minor = Buffer.alloc(1);
+        client_version_minor.writeUInt8(versionParts[1], 0);
+        packet_data = Buffer.concat([packet_data, client_version_minor]);
 
-    let client_version_micro = Buffer.alloc(1);
-    client_version_micro.writeUInt8(1, 0);
-    packet_data = Buffer.concat([packet_data, client_version_micro]);
+        let client_version_micro = Buffer.alloc(1);
+        client_version_micro.writeUInt8(versionParts[2], 0);
+        packet_data = Buffer.concat([packet_data, client_version_micro]);
 
-    let client_version_hotfix = Buffer.alloc(1);
-    client_version_hotfix.writeUInt8(0, 0);
-    packet_data = Buffer.concat([packet_data, client_version_hotfix]);
+        let client_version_hotfix = Buffer.alloc(1);
+        client_version_hotfix.writeUInt8(versionParts[3], 0);
+        packet_data = Buffer.concat([packet_data, client_version_hotfix]);
+    }
 
     let last_known_client_state = Buffer.alloc(1);
     last_known_client_state.writeUInt8(0, 0);
