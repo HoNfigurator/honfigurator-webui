@@ -62,8 +62,41 @@ const DownloadButton = ({ s3_url, match_id }) => {
     }
   };
 
-  const handleDownloadClick = () => {
-    window.location.href = s3_url.replace('http:', 'https:');
+  const handleDownloadClick = async () => {
+    setError('');
+    setState('downloading');
+    try {
+      const response = await fetch(`/api-ui/download_replay/${match_id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`,
+          // Additional headers as required by your API
+        },
+      });
+      if (response.ok) {
+        // Assuming the API returns a URL to the file or the file itself
+        // For URL response, redirect or download file via a link
+        // For direct file response, handle blob download
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', `${match_id}.honreplay`); // Example filename, adjust as needed
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+      } else {
+        const errorResponse = await res.json();
+        // Handle errors or non-OK responses
+        console.error('Failed to download replay');
+        setError(`Failed to download replay`);
+        setState('downloading-failed');
+      }
+    } catch (err) {
+      setError(`Failed to download reply: ${err.message}`);
+      setState('downloading-failed');
+      console.error('Error fetching replay:', err);
+    }
   };
 
   useEffect(() => {
@@ -76,8 +109,12 @@ const DownloadButton = ({ s3_url, match_id }) => {
     return <Button onClick={requestReplay}>Request</Button>;
   } else if (state === 'download') {
     return <Button onClick={handleDownloadClick}>Download</Button>;
+  } else if (state === 'downloading') {
+    return <p>Downloading...</p>;
   } else if (state === 'failed') {
     return <p>Error requesting replay: {error}</p>;
+  } else if (state === 'downloading-failed') {
+    return <p>Error downloading replay: {error}</p>;
   } else if (state === 'requesting') {
     return <p>Requested. Please wait...</p>;
   }

@@ -67,47 +67,88 @@ router.get('/kongor-health', (req, res) => {
     });
 });
 
-
-router.get('/get_match_stats/:matchId', async (req, res) => {
-  let matchId = req.params.matchId;
-  matchId = matchId.replace(/^[mM]/, '');
+async function fetchMatchData(matchId, endpoint) {
   const sessionCookie = process.env.HON_COOKIE;
-
   const data = qs.stringify({
-    match_id: matchId,
+    match_id: matchId.replace(/^[mM]/, ''),
     cookie: sessionCookie
   });
 
   const config = {
     method: 'post',
-    url: 'http://api.kongor.online/client_requester.php?f=get_match_stats',
+    url: `http://api.kongor.online/client_requester.php?f=${endpoint}`,
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'Accept': '*/*',
       'Accept-Encoding': 'gzip, deflate, br',
       'User-Agent': 'HoNfigurator-WebUI'
-      // add any other headers required
+      // Add any other headers required
     },
     data: data
   };
 
   try {
     const response = await axios(config);
-    const deserializedData = unserialize(response.data); // Deserialize the PHP serialized data
-    res.json(deserializedData); // Send the deserialized data as JSON
+    return unserialize(response.data); // Deserialize and return the PHP serialized data
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error fetching match stats' });
+    throw new Error('Error fetching data from API');
+  }
+}
+
+router.get('/get_match_stats/:matchId', async (req, res) => {
+  try {
+    const matchId = req.params.matchId;
+    const deserializedData = await fetchMatchData(matchId, 'get_match_stats');
+    delete deserializedData['match_summ'][matchId]['s3_url'];
+    res.json(deserializedData); // Send the deserialized data as JSON
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/download_replay/:matchId', async (req, res) => {
+  try {
+    const matchId = req.params.matchId;
+    const deserializedData = await fetchMatchData(matchId, 'get_match_stats');
+    
+    // Assuming `s3_url` is now present and you want to download the file
+    const s3Url = deserializedData['match_summ'][matchId]['s3_url'];
+    
+    if (s3Url) {
+      // Implement file download logic here. For example:
+      const fileResponse = await axios({
+        method: 'get',
+        url: s3Url,
+        responseType: 'stream'
+      });
+
+      // Set appropriate headers for file download if necessary
+      res.setHeader('Content-Disposition', 'attachment; filename=replay.zip');
+      fileResponse.data.pipe(res);
+    } else {
+      throw new Error('s3_url not found in the response');
+    }
+  } catch (error) {
+    console.error(error);
+    if (error.response.status) {
+      console.log(error.message);
+      res.status(error.response.status).json({ error: error.message });
+    } else {
+      console.error('Error fetching replay:', error.status, error.data);
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
 router.get('/check_replay_exists/:matchId', async (req, res) => {
   try {
+    const sessionCookie = process.env.HON_COOKIE;
     let matchId = req.params.matchId;
     matchId = matchId.replace(/^[mM]/, '');
     const config = {
       method: 'head',
-      url: `http://api.kongor.online/replays/M${matchId}.honreplay`,
+      url: `http://api.kongor.online/replays/${sessionCookie}/M${matchId}.honreplay`,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': '*/*',
