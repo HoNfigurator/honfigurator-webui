@@ -119,7 +119,7 @@ router.get('/download_replay/:matchId', async (req, res) => {
       // Implement file download logic here. For example:
       const fileResponse = await axios({
         method: 'get',
-        url: s3Url,
+        url: s3Url.replace('http://', 'https://'), // Replace the protocol to HTTPS if necessary
         responseType: 'stream'
       });
 
