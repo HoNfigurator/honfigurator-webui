@@ -448,17 +448,17 @@ async function basicAuthMiddleware(req, res, next) {
 
 async function discordAuthMiddleware(req, res, next) {
   try {
-    console.log(`discord token verification. ${req.user.user_id}`)
+    console.debug(`discord token verification. ${req.user.user_id}`)
     const userData = await userController.getUserDataFromDatabase({ discord_id: req.user.user_id });
 
     // Check if the access token is about to expire or has already expired
     if (Date.now() >= userData.expires_at - 60 * 1000) {
-      console.log('Discord access token expired or about to expire, refreshing...');
+      console.debug('Discord access token expired or about to expire, refreshing...');
 
       const tokenManager = new TokenManager(oauth, userData.discord_id, userController.getUserDataFromDatabase, userController.updateAccessToken);
       const tokenData = await tokenManager.refreshToken(tokenManager.refreshTokenFunc.bind(tokenManager));
       const { newAccessToken, expiresIn } = tokenData;
-      console.log(`new data:\n\t${newAccessToken}\n\t${expiresIn}`);
+      console.debug(`new data:\n\t${newAccessToken}\n\t${expiresIn}`);
     }
     next();
   } catch (error) {
@@ -472,12 +472,12 @@ async function refreshDiscordToken(user_id, discord_id) {
     const userData = await userController.getUserDataFromDatabase({ discord_id });
 
     if (Date.now() >= userData.expires_at - 60 * 1000) {
-      console.log('Discord access token expired or about to expire, refreshing...');
+      console.debug('Discord access token expired or about to expire, refreshing...');
 
       const tokenManager = new TokenManager(oauth, discord_id);
       const newAccessToken = await tokenManager.refreshToken(tokenManager.refreshTokenFunc.bind(tokenManager));
 
-      console.log(`New Discord access token: ${newAccessToken}`);
+      console.debug(`New Discord access token: ${newAccessToken}`);
     }
   } catch (error) {
     console.error('Failed to refresh Discord access token:', error);

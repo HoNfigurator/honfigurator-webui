@@ -3,13 +3,6 @@ const path = require('path');
 const envFilePath = path.join(__dirname, `.env.${process.env.NODE_ENV || 'development'}`);
 const dotenv = require('dotenv');
 dotenv.config({ path: envFilePath });
-var apm = require('elastic-apm-node').start({
-  serviceName: 'HoNFigurator-Management',
-  secretToken: '',
-  serverUrl: 'https://elastic-node1.honfigurator.app:8200',
-  environment: process.env.NODE_ENV || 'development',
-  verifyServerCert: false // Only for development or testing
-})
 const fs = require('fs');
 const https = require('https');
 const userRoutes = require('../routes/userRoutes');
