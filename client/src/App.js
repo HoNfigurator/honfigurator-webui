@@ -23,10 +23,18 @@ import handleLogout from './Security/logout';
 import TroubleshootingPage from './Components/troubleshooting/troubleshooting';
 import GameReplaysSearchPage from './Components/replaySearch/replayFinder';
 import CustomHeader from './Header';
+import CookieConsent from './Forms/CookieConsent'; // Add this import
+import PrivacyPolicy from './Forms/privacyPolicy';
 import useKongorHealthStatus from './hooks/useKongorHealthCheck';
+import { initializeRUM } from './Components/otel';
 import useFilebeatOAuthCheck from './hooks/useFilebeatOAuthCheck';
 import { TaskStatusContext, TaskStatusProvider } from './hooks/useTaskStatusContext';
+import { getSessionToken } from './Security/tokenManager';
 
+const consent = localStorage.getItem('cookieConsent');
+  if (consent === 'true') {
+    initializeRUM();
+  }
 
 const { Header, Content, Sider } = Layout;
 
@@ -43,6 +51,7 @@ function App() {
 }
 
 function AppContent() {
+
   const [selectedServerLabel, setSelectedServerLabel] = useState("");
   const [selectedServerValue, setSelectedServerValue] = useState("");
   const [selectedServerPort, setSelectedServerPort] = useState("");
@@ -66,7 +75,7 @@ function AppContent() {
   const [serverToEdit, setServerToEdit] = useState(null);
   const kongorHealthStatus = useKongorHealthStatus();
 
-  const token = localStorage.getItem('sessionToken');
+  const token = getSessionToken();
   const location = useLocation();
   const navigate = useNavigate();
   const { authenticated, setAuthenticated } = useAuthenticatedState(token, location);
@@ -144,7 +153,9 @@ function AppContent() {
     // console.log(selected);
     if (selected) {
       setLoadingServerData(true);
-      localStorage.setItem('lastSelectedServer', `${selected.value}:${selected.port}`);
+      if (localStorage.getItem('cookieConsent') === true) {
+        localStorage.setItem('lastSelectedServer', `${selected.value}:${selected.port}`);
+      }
       // Call fetchUserInfoServer directly
       fetchUserInfoServer(selected.value, selected.label, selected.port);
     }
@@ -364,19 +375,19 @@ function AppContent() {
                   <Routes>
                     <Route
                       index
-                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? Home : ServerNotConnected} />}
+                      element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? Home : ServerNotConnected} />}
                     />
                     <Route
                       path="/status"
-                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? ServerStatus : ServerNotConnected} nestedObject="Performance (lag)" />}
+                      element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? ServerStatus : ServerNotConnected} nestedObject="Performance (lag)" />}
                     />
                     <Route
                       path="/control"
-                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? ServerControl : ServerNotConnected} />}
+                      element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? ServerControl : ServerNotConnected} />}
                     />
                     <Route
                       path="/roles"
-                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? UsersandRoles : ServerNotConnected} />}
+                      element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? UsersandRoles : ServerNotConnected} />}
                     />
                     <Route
                       path="/replays"
@@ -384,7 +395,7 @@ function AppContent() {
                     />
                     <Route
                       path="/troubleshooting"
-                      element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? TroubleshootingPage : ServerNotConnected} />}
+                      element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? TroubleshootingPage : ServerNotConnected} />}
                     />
                     <Route
                       path="/login"
@@ -394,6 +405,10 @@ function AppContent() {
                     <Route
                       path="/api-ui/user/auth/discord/callback"
                       element={<DiscordCallback />}
+                    />
+                    <Route
+                      path="/privacy-policy"
+                      element={<PrivacyPolicy />} // Add the PrivacyPolicy route
                     />
                   </Routes>
                 )}
@@ -414,6 +429,9 @@ function AppContent() {
           }}
         />
       </SelectedServerContext.Provider>
+      {location.pathname !== '/privacy-policy' && (
+        <CookieConsent onAccept={initializeRUM} />
+      )} {/* Conditionally render CookieConsent component */}
     </>
   );
 }

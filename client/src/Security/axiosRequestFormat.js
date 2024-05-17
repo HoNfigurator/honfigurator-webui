@@ -1,19 +1,19 @@
 // axiosRequestFormat.js
 import axios from 'axios';
+import { getSessionToken, setSessionToken } from './tokenManager';
 
 export const axiosInstanceTest = axios.create({
   baseURL: '/api',
 });
 
 export const createAxiosInstanceServer = (selectedServerValue, selectedServerPort) => {
-  // console.log(`Selected server is: ${selectedServer}`);
   return axios.create({
     baseURL: '/api',
     headers: {
       'Content-Type': 'application/json',
       'selected-server': selectedServerValue,
       'selected-port': selectedServerPort,
-      Authorization: `Bearer ${localStorage.getItem('sessionToken')}`,
+      Authorization: `Bearer ${getSessionToken()}`,
     },
     cache: false,
   });
@@ -28,7 +28,7 @@ export const axiosInstanceUI = axios.create({
 
 axiosInstanceUI.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('sessionToken');
+    const token = getSessionToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

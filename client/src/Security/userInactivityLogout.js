@@ -1,5 +1,4 @@
-// security/userInactivityLogout.js
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 const events = [
   'mousedown',
@@ -14,17 +13,21 @@ const useInactivityLogout = (logoutFunction, inactivityTime = 60, isAuthenticate
   const milliseconds = inactivityTime * 1000;
 
   const logout = (reason) => {
-    setStateMessage(reason === "inactivity" ? "You have been logged out due to inactivity." : "You have been logged out.");
+    const message = reason === "inactivity" ? "You have been logged out due to inactivity." : "You have been logged out.";
+    setStateMessage(message);
     logoutFunction(reason);
+    // console.log(`[DEBUG] Logout triggered: ${message}`);
   };
 
   const resetTimer = () => {
     if (timeoutIdRef.current) {
       clearTimeout(timeoutIdRef.current);
+      console.log('[DEBUG] Timeout cleared');
     }
 
     const id = setTimeout(() => logout("inactivity"), milliseconds);
     timeoutIdRef.current = id;
+    // console.log(`[DEBUG] Timeout set for ${milliseconds} milliseconds`);
   };
 
   useEffect(() => {
@@ -32,26 +35,22 @@ const useInactivityLogout = (logoutFunction, inactivityTime = 60, isAuthenticate
       return;
     }
 
+    // console.log('[DEBUG] User is authenticated, setting up inactivity logout');
+
     resetTimer();
 
     const setEventListeners = () => {
       events.forEach((event) =>
-        window.addEventListener(
-          event,
-          resetTimer,
-          { passive: true }
-        )
+        window.addEventListener(event, resetTimer, { passive: true })
       );
+      // console.log('[DEBUG] Event listeners set');
     };
 
     const removeEventListeners = () => {
       events.forEach((event) =>
-        window.removeEventListener(
-          event,
-          resetTimer,
-          { passive: true }
-        )
+        window.removeEventListener(event, resetTimer, { passive: true })
       );
+      // console.log('[DEBUG] Event listeners removed');
     };
 
     setEventListeners();
@@ -59,9 +58,9 @@ const useInactivityLogout = (logoutFunction, inactivityTime = 60, isAuthenticate
     return () => {
       removeEventListeners();
       clearTimeout(timeoutIdRef.current);
+      // console.log('[DEBUG] Cleanup: Timeout and event listeners removed');
     };
   }, [isAuthenticated, milliseconds]);
 };
 
-  
 export default useInactivityLogout;

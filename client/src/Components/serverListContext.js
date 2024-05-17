@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { axiosInstanceUI } from '../Security/axiosRequestFormat';
 import { performTCPCheck } from '../Helpers/healthChecks';
 import { useAuthenticatedState } from '../Security/RequireAuth';
+import { getSessionToken } from '../Security/tokenManager';
 
 const ServerListContext = createContext(null);
 
@@ -126,7 +127,7 @@ export const ServerListProvider = ({ children }) => {
     }
   };
 
-  const token = localStorage.getItem('sessionToken');
+  const token = getSessionToken();
   const { authenticated } = useAuthenticatedState(token);
 
 

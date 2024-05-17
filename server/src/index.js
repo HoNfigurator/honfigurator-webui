@@ -1,16 +1,21 @@
 // index.js
 const path = require('path');
-const envFilePath = path.join(__dirname, `.env.${process.env.NODE_ENV || 'development'}`);
 const dotenv = require('dotenv');
-dotenv.config({ path: envFilePath });
 const fs = require('fs');
+// Load .env file first
+dotenv.config({ path: path.join(__dirname, '.env') });
+// Load environment-specific .env file
+const envFilePath = path.join(__dirname, `.env.${process.env.NODE_ENV || 'development'}`);
+if (fs.existsSync(envFilePath)) {
+  dotenv.config({ path: envFilePath });
+}
 const https = require('https');
 const userRoutes = require('../routes/userRoutes');
 const serverRoutes = require('../routes/serverRoutes');
 
 console.log(envFilePath);
 
-console.log(process.env.DISCORD_CLIENT_ID);
+console.log(process.env);
 
 const express = require('express');
 const app = express();

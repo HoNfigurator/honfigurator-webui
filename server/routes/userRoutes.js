@@ -343,7 +343,7 @@ router.delete('/user/delete_server', authMiddleware, discordAuthMiddleware, user
 // Refresh the current session using a valid discord token
 router.post('/user/refresh', authMiddlewareAllowExpired, discordAuthMiddleware, async (req, res) => {
   try {
-    console.log(`received refresh request. ${req.user.user_id}`);
+    console.debug(`received refresh request. ${req.user.user_id}`);
 
     // Check for user inactivity
     const currentTime = Math.floor(Date.now() / 1000);

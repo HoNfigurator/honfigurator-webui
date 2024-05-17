@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Button, Table, Typography } from 'antd';
 import axios from 'axios';
+import { getSessionToken } from '../../Security/tokenManager';
 
 const { Search } = Input;
 
@@ -25,7 +26,7 @@ const DownloadButton = ({ s3_url, match_id }) => {
       const response = await fetch(`/api-ui/check_replay_exists/${match_id}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`,
+          'Authorization': `Bearer ${getSessionToken()}`,
         },
       });
       if (response.ok) {
@@ -45,7 +46,7 @@ const DownloadButton = ({ s3_url, match_id }) => {
       const res = await fetch(`/api-ui/request_replay/${match_id}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`,
+          'Authorization': `Bearer ${getSessionToken()}`,
         },
       });
       if (res.ok) {
@@ -69,7 +70,7 @@ const DownloadButton = ({ s3_url, match_id }) => {
       const response = await fetch(`/api-ui/download_replay/${match_id}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`,
+          'Authorization': `Bearer ${getSessionToken()}`,
           // Additional headers as required by your API
         },
       });
@@ -132,7 +133,7 @@ const GameReplaysSearchPage = () => {
       const response = await fetch(`/api-ui/get_match_stats/${matchId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`,
+          'Authorization': `Bearer ${getSessionToken()}`,
         },
       });
       const rawData = await response.json();

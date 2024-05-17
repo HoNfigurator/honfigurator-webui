@@ -3,7 +3,7 @@ const myIntents = new IntentsBitField();
 myIntents.add(IntentsBitField.Flags.GuildPresences, IntentsBitField.Flags.GuildMembers);
 
 const client = new Client({ intents: '' });
-client.login(process.env.BOT_TOKEN);
+// client.login(process.env.BOT_TOKEN);
 
 async function validateUser(discordId) {
     const user = await client.users.fetch(discordId);

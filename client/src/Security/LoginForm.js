@@ -5,20 +5,21 @@ import './LoginForm.css';
 import discordLogo from '../images/discord-logo.png';
 import { useAuthenticatedState } from './RequireAuth';
 import { axiosInstanceUI } from './axiosRequestFormat';
+import { setSessionToken, getSessionToken, setTokenExpiry } from './tokenManager';
 
 const { Content } = Layout;
 
 const LoginForm = ({ stateMessage }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const token = localStorage.getItem('sessionToken');
+  const token = getSessionToken();
   const { setAuthenticated } = useAuthenticatedState(token, location);
 
   const LoginWithDiscordButton = () => {
     const clientId = process.env.REACT_APP_DISCORD_CLIENT_ID;
     const redirectUri = encodeURIComponent(process.env.REACT_APP_DISCORD_CALLBACK_URI);
     const scope = encodeURIComponent(process.env.REACT_APP_DISCORD_SCOPE);
-    const sessionToken = localStorage.getItem('sessionToken');
+    const sessionToken = getSessionToken();
 
     const handleClick = (event) => {
       event.preventDefault();
@@ -30,8 +31,8 @@ const LoginForm = ({ stateMessage }) => {
           .then((data) => {
             const { sessionToken, tokenExpiry } = data;
             if (sessionToken) {
-              localStorage.setItem('sessionToken', sessionToken);
-              localStorage.setItem('tokenExpiry', tokenExpiry);
+              setSessionToken(sessionToken);
+              setTokenExpiry(tokenExpiry);
               setAuthenticated(true);
               navigate('/');
             } else {

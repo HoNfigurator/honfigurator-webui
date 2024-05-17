@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { axiosInstanceUI } from './axiosRequestFormat';
+import { clearSessionToken, clearTokenExpiry, getSessionToken, getTokenExpiry, setSessionToken, setTokenExpiry } from './tokenManager';
 
 function useCurrentUser(sessionToken, location) {
   const [loading, setLoading] = useState(true);
@@ -16,20 +17,28 @@ function useCurrentUser(sessionToken, location) {
   const tokenExpiryFromQuery = queryParams.get('tokenExpiry');
 
   useEffect(() => {
-    if (sessionTokenFromQuery) {
-      localStorage.setItem('sessionToken', sessionTokenFromQuery);
-    }
-    if (tokenExpiryFromQuery) {
-      localStorage.setItem('tokenExpiry', tokenExpiryFromQuery);
-    }
+    // setSessionToken(sessionTokenFromQuery);
 
-    const storedSessionToken = localStorage.getItem('sessionToken') || sessionToken;
+    // if (localStorage.getItem('cookieConsent') === 'true') {
+      if (sessionTokenFromQuery) {
+        // localStorage.setItem('sessionToken', sessionTokenFromQuery);
+        setSessionToken(sessionTokenFromQuery);
+      }
+      if (tokenExpiryFromQuery) {
+        setTokenExpiry(tokenExpiryFromQuery);
+      }
+    // }
 
-    if (!storedSessionToken) {
+    // const storedSessionToken = getSessionToken() || sessionTokenFromQuery;
+    // const storedTokenExpiry = getTokenExpiry() || tokenExpiryFromQuery;
+
+    if (!getSessionToken()) {
       console.log("no sessionToken, leaving");
       setLoading(false);
       setAuthenticated(false);
     }
+
+    // setSessionToken(storedSessionToken);
   
     function isTokenExpiring(tokenExpiry) {
       const expiresIn = new Date(tokenExpiry) - new Date();
@@ -39,7 +48,7 @@ function useCurrentUser(sessionToken, location) {
 
     async function fetchCurrentUser() {
       try {
-        const tokenExpiry = localStorage.getItem('tokenExpiry');
+        const tokenExpiry = getTokenExpiry();
         if (!tokenExpiry) {
           // console.log("no expiry token in storage.")
           setAuthenticated(false);
@@ -54,7 +63,7 @@ function useCurrentUser(sessionToken, location) {
 
         
         // console.log(`Token is expiring: ${tokenExpiry}`)
-        const token = localStorage.getItem('sessionToken') || storedSessionToken;
+        const token = getSessionToken();
 
         try {
           const response = await axiosInstanceUI.post('/user/refresh', {}, {
@@ -72,13 +81,15 @@ function useCurrentUser(sessionToken, location) {
             setAuthenticated(true);
           
             // Update the session token and expiration with the new ones
-            localStorage.setItem('sessionToken', data.sessionToken);
-            localStorage.setItem('tokenExpiry', data.tokenExpiry);
+            setSessionToken(data.sessionToken);
+            setTokenExpiry(data.tokenExpiry);
           } 
         } catch(error) {
           if (error.response.status === 401) {
-            localStorage.removeItem('sessionToken');
-            localStorage.removeItem('tokenExpiry')
+            // localStorage.removeItem('sessionToken');
+            clearSessionToken();
+            // localStorage.removeItem('tokenExpiry')
+            clearTokenExpiry();
             setAuthenticated(false);
             // return;
           } else {
@@ -117,9 +128,12 @@ function RequireAuth({ component: Component, sessionToken, ...rest }) {
 
   useEffect(() => {
   if (!loading && !authenticated) {
-    localStorage.removeItem('sessionToken');
-    localStorage.removeItem('tokenExpiry');
+    // localStorage.removeItem('sessionToken');
+    clearSessionToken();
+    // localStorage.removeItem('tokenExpiry');
+    clearTokenExpiry();
     setAuthenticated(false);
+    console.log(`Logging out. Session token: ${sessionToken}`);
     navigate('/login', { replace: true });
   }
 }, [loading, authenticated, navigate, setAuthenticated]);

@@ -1,10 +1,16 @@
 // Environment loading
 const path = require('path');
-const envFilePath = path.join(__dirname, `.env.${process.env.NODE_ENV || 'development'}`);
 const dotenv = require('dotenv');
-dotenv.config({ path: envFilePath });
+const fs = require('fs');
+// Load .env file first
+dotenv.config({ path: path.join(__dirname, '.env') });
+// Load environment-specific .env file
+const envFilePath = path.join(__dirname, `.env.${process.env.NODE_ENV || 'development'}`);
+if (fs.existsSync(envFilePath)) {
+  dotenv.config({ path: envFilePath });
+}
 const environment = process.env.NODE_ENV || 'development';
-const resourceAttributes = `service.name=${process.env.APM_SERVICE_NAME},service.version=${process.env.APM_SERVICE_VERSION},deployment.environment=${environment}`;
+const resourceAttributes = `service.name=${process.env.OTEL_EXPORTER_SERVICE_NAME},service.version=${process.env.OTEL_EXPORTER_SERVICE_VERSION},deployment.environment=${environment}`;
 process.env.OTEL_RESOURCE_ATTRIBUTES = resourceAttributes;
 
 // Require dependencies
@@ -27,12 +33,12 @@ diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 // Configure the OpenTelemetry SDK
 const sdk = new opentelemetry.NodeSDK({
   traceExporter: new OTLPTraceExporter({
-    url: `${process.env.APM_OTLP_ENDPOINT}:${process.env.APM_OTLP_PORT}/v1/traces`,
+    url: `${process.env.OTEL_EXPORTER_ENDPOINT}/v1/traces`,
     headers: {},
   }),
   metricReader: new PeriodicExportingMetricReader({
     exporter: new OTLPMetricExporter({
-      url: `${process.env.APM_OTLP_ENDPOINT}:${process.env.APM_OTLP_PORT}/v1/metrics`,
+      url: `${process.env.OTEL_EXPORTER_ENDPOINT}/v1/metrics`,
       headers: {},
       concurrencyLimit: 1,
     }),

@@ -49,7 +49,7 @@ function AppContent() {
     const [serverToEdit, setServerToEdit] = useState(null);
 
 
-    const token = localStorage.getItem('sessionToken');
+    const token = getSessionToken();
     const location = useLocation();
     const navigate = useNavigate();
     const { authenticated, setAuthenticated } = useAuthenticatedState(token, location);
@@ -320,27 +320,27 @@ function AppContent() {
                                     <Routes>
                                         <Route
                                             index
-                                            element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? Home : ServerNotConnected} />}
+                                            element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? Home : ServerNotConnected} />}
                                         />
                                         <Route
                                             path="/status"
-                                            element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? ServerStatus : ServerNotConnected} nestedObject="Performance (lag)" />}
+                                            element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? ServerStatus : ServerNotConnected} nestedObject="Performance (lag)" />}
                                         />
                                         <Route
                                             path="/control"
-                                            element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? ServerControl : ServerNotConnected} />}
+                                            element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? ServerControl : ServerNotConnected} />}
                                         />
                                         <Route
                                             path="/roles"
-                                            element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? UsersandRoles : ServerNotConnected} />}
+                                            element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? UsersandRoles : ServerNotConnected} />}
                                         />
                                         <Route
                                             path="/replays"
-                                            element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? GameReplaysSearchPage : ServerNotConnected} />}
+                                            element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? GameReplaysSearchPage : ServerNotConnected} />}
                                         />
                                         <Route
                                             path="/troubleshooting"
-                                            element={<RequireAuth sessionToken={token} component={selectedServerStatus === "OK" ? TroubleshootingPage : ServerNotConnected} />}
+                                            element={<RequireAuth sessionToken={getSessionToken()} component={selectedServerStatus === "OK" ? TroubleshootingPage : ServerNotConnected} />}
                                         />
                                         <Route
                                             path="/login"
@@ -379,4 +379,4 @@ function AppContent() {
     );
 }
 
-export default AppContent;
+// export default AppContent;
